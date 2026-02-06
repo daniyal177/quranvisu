@@ -111,6 +111,7 @@
       -webkit-user-select:none;
       user-select:none;
       -webkit-touch-callout:none;
+      isolation:isolate; /* helps ensure demo layers never "composite-blur" buttons */
     }
     @media (min-width: 900px) and (orientation: landscape){
       .stage{place-items:stretch;}
@@ -118,14 +119,12 @@
     }
     .viewer.immersive .frame{ width:100vw; height:100vh; border:none; border-radius:0; }
 
-    /* Dim system for demo */
-    .dimTarget{ transition: filter .15s ease, opacity .15s ease; }
+    /* Dim system for demo (NO FILTER -> prevents first-run blur) */
+    .dimTarget{ transition: opacity .15s ease; }
     .frame.demoActive .dimTarget{
-      filter: brightness(.22) saturate(.55) contrast(.95);
       opacity: .18;
     }
     .frame.demoActive .dimTarget.noDim{
-      filter: none !important;
       opacity: 1 !important;
     }
 
@@ -195,6 +194,8 @@
       line-height: 1;
       position: relative;
       z-index: 1;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: geometricPrecision;
     }
 
     /* Eye SVG */
@@ -235,7 +236,7 @@
       flex-direction:column;
       gap:calc(12px * var(--ui));
       padding: 0 calc(10px * var(--ui));
-      will-change: transform, filter, opacity;
+      will-change: transform, opacity;
     }
     .layer .arabic{
       font-family: var(--arabic);
@@ -260,12 +261,12 @@
     .in{ animation: textIn .22s ease-out both, textScaleUp 1.35s ease-out forwards; }
     .out{ animation: textOut .22s ease-in both; }
     @keyframes textIn{
-      0%{ opacity:0; transform: translate(-50%, calc(-50% + 34px)); filter: blur(6px); }
-      100%{ opacity:1; transform: translate(-50%, -50%); filter: blur(0px); }
+      0%{ opacity:0; transform: translate(-50%, calc(-50% + 34px)); }
+      100%{ opacity:1; transform: translate(-50%, -50%); }
     }
     @keyframes textOut{
-      0%{ opacity:1; transform: translate(-50%,-50%); filter: blur(0px); }
-      100%{ opacity:0; transform: translate(-50%, calc(-50% - 34px)); filter: blur(6px); }
+      0%{ opacity:1; transform: translate(-50%,-50%); }
+      100%{ opacity:0; transform: translate(-50%, calc(-50% - 34px)); }
     }
     @keyframes textScaleUp{
       0%{ transform: translate(-50%,-50%) scale(.95); }
@@ -376,9 +377,9 @@
       animation: circleGlow .22s ease-out;
     }
     @keyframes circleGlow{
-      0%{ transform: scale(.98); filter: blur(0px); }
-      60%{ transform: scale(1.06); filter: blur(.0px); }
-      100%{ transform: scale(1.00); filter: blur(0px); }
+      0%{ transform: scale(.98); }
+      60%{ transform: scale(1.06); }
+      100%{ transform: scale(1.00); }
     }
 
     .infoOrb{
@@ -408,9 +409,8 @@
       opacity: 0 !important;
       transform: translateY(-8px) scale(.98);
       filter: blur(1px);
-      pointer-events: none !important;   /* THIS is what stops the "invisible click" */
+      pointer-events: none !important;
     }
-    /* Make sure the verse circle & info are truly non-interactive when hidden */
     .frame.uiHidden .navCircle,
     .frame.uiHidden .infoOrb,
     .frame.uiHidden .gearBtn,
@@ -742,6 +742,13 @@
       z-index: 999;
       pointer-events:auto;
     }
+    /* Make sure demo backdrop never sits "on top" of highlights */
+    .demo::before{
+      content:"";
+      position:absolute; inset:0;
+      background: rgba(0,0,0,.18);
+      pointer-events:none;
+    }
     .demo .inner{
       position:absolute;
       left:50%; top:50%;
@@ -805,11 +812,11 @@
     .hl, .hlGold{
       position:relative !important;
       z-index: 99999 !important;
-      filter: none !important;
       opacity: 1 !important;
       pointer-events:auto !important;
       transform: translateZ(0);
       will-change: box-shadow, transform, border-color, background, opacity;
+      isolation:isolate;
     }
     .hl{
       border-color: rgba(110,231,255,.55) !important;
@@ -905,10 +912,14 @@
 
         <div class="overlayTop dimTarget" id="overlayTop">
           <div class="leftTop"></div>
+
           <div class="rightTop">
             <button class="gearBtn hideableUI" id="btnGear" type="button" title="Settings">⚙️</button>
 
-            <!-- Eye button at top-middle position between gear and help -->
+            <!-- ? stays in the middle -->
+            <button class="helpBtn hideableUI" id="btnHelp" type="button" title="Help">?</button>
+
+            <!-- Eye moved to where ? used to be (right-most position) -->
             <button class="eyeBtn" id="btnEye" type="button" title="Immersive UI">
               <!-- open eye -->
               <svg class="eyeSvg eyeOpen" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -925,8 +936,6 @@
                 <path d="M12 16l0 2.4" stroke="rgba(255,255,255,.72)" stroke-width="1.8" stroke-linecap="round"/>
               </svg>
             </button>
-
-            <button class="helpBtn hideableUI" id="btnHelp" type="button" title="Help">?</button>
           </div>
         </div>
 
@@ -1076,10 +1085,10 @@
           <div class="inner">
             <div class="top">
               <b>Quick demo</b>
-              <div style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace; font-size:12px; opacity:.9;" id="demoStep">1 / 4</div>
+              <div style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace; font-size:12px; opacity:.9;" id="demoStep">1 / 6</div>
             </div>
             <div class="body">
-              <p class="line" id="demoText">Swipe up/down to move between verses.</p>
+              <p class="line" id="demoText">—</p>
               <div class="mini" id="demoMini">
                 <div class="demoHand">☝️</div>
                 <div style="display:flex;flex-direction:column;gap:2px">
@@ -1320,14 +1329,13 @@
     setPaused(!paused);
   }
 
-  // ---------- Immersive UI toggle (REAL hide: pointer-events + logic gate) ----------
+  // ---------- Immersive UI toggle ----------
   function setUIHidden(on){
     uiHidden = !!on;
     frame.classList.toggle("uiHidden", uiHidden);
     btnEye.classList.toggle("active", uiHidden);
     btnEye.setAttribute("aria-pressed", uiHidden ? "true" : "false");
 
-    // Make hidden elements unfocusable too (so it feels like they don't exist)
     const hideables = frame.querySelectorAll(".hideableUI");
     hideables.forEach(n=>{
       if (!(n instanceof HTMLElement)) return;
@@ -1342,8 +1350,6 @@
         n.removeAttribute("aria-hidden");
       }
     });
-
-    // If a modal is open, keep it usable (modals are not hideableUI)
   }
 
   btnEye.addEventListener("pointerdown", (e)=>{
@@ -1951,7 +1957,7 @@
     applySegment(0, true);
   }
 
-  function next(allowWhilePaused){
+  function next(){
     if (!current) return;
     if (infoOpen || ended) return;
 
@@ -1963,7 +1969,7 @@
     applySegment(n, true);
   }
 
-  function prev(allowWhilePaused){
+  function prev(){
     if (!current) return;
     if (infoOpen || ended) return;
     applySegment(idx - 1, true);
@@ -1987,8 +1993,8 @@
     if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 45){
       ensureUserGesture();
       suppressFrameTap();
-      if (dy < 0) next(true);
-      else prev(true);
+      if (dy < 0) next();
+      else prev();
       return true;
     }
     return false;
@@ -2090,7 +2096,7 @@
   document.addEventListener("webkitfullscreenchange", syncFullscreenState);
 
   // Info handlers
-  infoOrb.addEventListener("pointerdown", (e)=>{ suppressFrameTap(); e.stopPropagation(); }, {passive:false});
+  infoOrb.addEventListener("pointerdown", (e)=>{ suppressFrameTap(); e.preventDefault(); e.stopPropagation(); }, {passive:false});
   infoOrb.addEventListener("click", (e)=>{
     suppressFrameTap();
     e.preventDefault();
@@ -2160,15 +2166,15 @@
       e.preventDefault();
       return;
     }
-    if (e.key === "ArrowUp"){ ensureUserGesture(); if(current && wizard.style.display!=="block") next(true); }
-    if (e.key === "ArrowDown"){ ensureUserGesture(); if(current && wizard.style.display!=="block") prev(true); }
+    if (e.key === "ArrowUp"){ ensureUserGesture(); if(current && wizard.style.display!=="block") next(); }
+    if (e.key === "ArrowDown"){ ensureUserGesture(); if(current && wizard.style.display!=="block") prev(); }
     if (e.key.toLowerCase() === "f"){ toggleFullscreen(); }
     if (e.key.toLowerCase() === "i"){ setUIHidden(!uiHidden); }
   });
 
   // Settings
   function openSettings(){
-    if (uiHidden) return; // hard gate
+    if (uiHidden) return;
     suppressFrameTap();
     ensureUserGesture();
     settingsModal.style.display = "block";
@@ -2181,6 +2187,7 @@
     settingsModal.setAttribute("aria-hidden","true");
   }
 
+  btnGear.addEventListener("pointerdown", (e)=>{ suppressFrameTap(); e.preventDefault(); e.stopPropagation(); }, {passive:false});
   btnGear.addEventListener("click", (e)=>{
     e.preventDefault();
     e.stopPropagation();
@@ -2455,7 +2462,7 @@
   navCircle.addEventListener("click", (e)=>{
     e.preventDefault();
     e.stopPropagation();
-    if (uiHidden) return;            // logic-level hide
+    if (uiHidden) return;
     glowCircle();
     openWizard(false);
   });
@@ -2474,6 +2481,7 @@
   function clearHighlights(){
     btnGear.classList.remove("hl");
     btnHelp.classList.remove("hl");
+    btnEye.classList.remove("hl");
     navCircle.classList.remove("hlGold");
     infoOrb.classList.remove("hl");
     clearNoDim();
@@ -2486,7 +2494,7 @@
     frame.classList.add("demoActive");
     clearNoDim();
 
-    // IMPORTANT: temporarily show UI (so first-run demo matches "?" demo perfectly)
+    // temporarily show UI so the demo is always visible
     const prevHidden = uiHidden;
     if (prevHidden) setUIHidden(false);
 
@@ -2500,9 +2508,10 @@
 
     demo.style.display = "block";
     demo.setAttribute("aria-hidden","false");
-
-    // store whether it was hidden; restore after demo ends
     demo.dataset._restoreUiHidden = prevHidden ? "1" : "0";
+
+    // make sure top bar isn't dimmed during button explanation steps
+    ensureVisibleDuringDemo(overlayTop);
 
     renderDemoStep();
   }
@@ -2514,7 +2523,6 @@
     demo.style.display = "none";
     demo.setAttribute("aria-hidden","true");
 
-    // restore immersive ui state if it was on before demo
     const restore = demo.dataset._restoreUiHidden === "1";
     if (restore) setUIHidden(true);
 
@@ -2536,11 +2544,15 @@
   function renderDemoStep(){
     clearHighlights();
 
+    // Order requested:
+    // 1) Settings, 2) ?, 3) Eye, then the rest
     const steps = [
-      { text: "Swipe up/down to move between verses.", mini: true,  highlight: null },
-      { text: "Use ⚙️ Settings to toggle Arabic, background, autoplay, fullscreen. Tap ? to see this demo again.", mini: false, highlight: "gear" },
-      { text: "Tap the VERSE button to pick a surah + verse, then press Play.", mini: false, highlight: "nav" },
-      { text: "If extra info exists for a verse, tap the info button i.", mini: false, highlight: "info" }
+      { text: "⚙️ Settings: toggle Arabic, background, autoplay, and fullscreen.", mini:false, highlight:"gear" },
+      { text: "?: re-open this quick demo anytime.", mini:false, highlight:"help" },
+      { text: "Eye: hide/show UI for an immersive view (eye closed = UI hidden).", mini:false, highlight:"eye" },
+      { text: "Swipe up/down to move between verses.", mini:true, highlight:null },
+      { text: "Tap the VERSE button to pick a surah + verse, then press Play.", mini:false, highlight:"nav" },
+      { text: "If extra info exists for a verse, tap the info button i.", mini:false, highlight:"info" }
     ];
 
     const s = steps[demoIndex];
@@ -2552,9 +2564,17 @@
 
     if (s.highlight === "gear"){
       btnGear.classList.add("hl");
-      btnHelp.classList.add("hl");
       ensureVisibleDuringDemo(btnGear);
+      ensureVisibleDuringDemo(overlayTop);
+    }
+    if (s.highlight === "help"){
+      btnHelp.classList.add("hl");
       ensureVisibleDuringDemo(btnHelp);
+      ensureVisibleDuringDemo(overlayTop);
+    }
+    if (s.highlight === "eye"){
+      btnEye.classList.add("hl");
+      ensureVisibleDuringDemo(btnEye);
       ensureVisibleDuringDemo(overlayTop);
     }
     if (s.highlight === "nav"){
@@ -2582,7 +2602,7 @@
     e.preventDefault(); e.stopPropagation();
     popFx(demoNext);
 
-    const last = (demoIndex >= 3);
+    const last = (demoIndex >= 5);
     if (last){
       resumeAfterDemo();
       return;
@@ -2591,26 +2611,32 @@
     renderDemoStep();
   });
 
+  // Help button launches demo
   btnHelp.addEventListener("pointerdown", (e)=>{ suppressFrameTap(); e.preventDefault(); e.stopPropagation(); }, {passive:false});
   btnHelp.addEventListener("click", (e)=>{
     suppressFrameTap();
     e.preventDefault(); e.stopPropagation();
     popFx(btnHelp);
-    if (uiHidden) setUIHidden(false); // ensure demo always works visibly
+    if (uiHidden) setUIHidden(false);
     startDemo(true);
   });
 
   // Button pointerdown suppression
   btnGear.addEventListener("pointerdown", (e)=>{ suppressFrameTap(); e.preventDefault(); e.stopPropagation(); }, {passive:false});
-  btnHelp.addEventListener("pointerdown", (e)=>{ suppressFrameTap(); e.preventDefault(); e.stopPropagation(); }, {passive:false});
+  btnEye.addEventListener("pointerdown", (e)=>{ suppressFrameTap(); e.preventDefault(); e.stopPropagation(); }, {passive:false});
   infoOrb.addEventListener("pointerdown", (e)=>{ suppressFrameTap(); e.preventDefault(); e.stopPropagation(); }, {passive:false});
+
+  // Info close + overlay
+  infoClose.addEventListener("pointerdown", (e)=>{ suppressFrameTap(); e.preventDefault(); e.stopPropagation(); }, {passive:false});
+
+  // Eye button already has handlers above
 
   // Optional: open wizard on first load
   function boot(){
     updateUIScale();
     setToggleUI();
     stopPlayback();
-    setUIHidden(false);   // default: UI visible, eye = open
+    setUIHidden(false);
     openWizard(true);
   }
   boot();
