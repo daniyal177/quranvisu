@@ -39,15 +39,13 @@
 
     *{box-sizing:border-box}
     html,body{height:100%}
-    html{overflow:hidden; overscroll-behavior:none;}
     body{
       margin:0;
       background: radial-gradient(1200px 700px at 65% 0%, #121a2b 0%, var(--bg) 55%);
       color:var(--ink);
       font-family: var(--sans);
-      overflow:hidden; /* keep */
+      overflow:hidden;
       touch-action: none;
-      overscroll-behavior: none;
     }
 
     .app{height:100%; width:100%;}
@@ -81,8 +79,7 @@
     }
 
     /* ---------- micro-interactions ---------- */
-    .btn, .gearBtn, .xBtn, .navCircle, .infoOrb, .card .btn, .infoFull .close, .helpBtn, .wizBtn,
-    .wizItem, .wizVerseItem, .eyeBtn{
+    .btn, .gearBtn, .xBtn, .navCircle, .infoOrb, .card .btn, .infoFull .close, .helpBtn, .wizBtn, .eyeBtn{
       transform: translateZ(0);
       transition: transform .14s ease, background .14s ease, border-color .14s ease, box-shadow .14s ease, filter .14s ease, opacity .18s ease;
       will-change: transform, filter, opacity;
@@ -120,18 +117,6 @@
       .frame{width:100vw;height:100vh;border:none;}
     }
     .viewer.immersive .frame{ width:100vw; height:100vh; border:none; border-radius:0; }
-
-    /* ----- Immersive UI hide (eye button stays) ----- */
-    .chrome{
-      transition: opacity .22s ease, transform .22s ease, filter .22s ease;
-      will-change: opacity, transform, filter;
-    }
-    .frame.uiHidden .chrome{
-      opacity: 0;
-      transform: translateY(10px);
-      pointer-events: none;
-      filter: blur(1px);
-    }
 
     /* Dim system for demo */
     .dimTarget{ transition: filter .15s ease, opacity .15s ease; }
@@ -193,7 +178,7 @@
     }
     .leftTop,.rightTop{display:flex;gap:calc(10px * var(--ui));align-items:center;flex-wrap:wrap}
 
-    .gearBtn, .helpBtn{
+    .gearBtn, .helpBtn, .eyeBtn{
       width:calc(42px * var(--ui));
       height:calc(42px * var(--ui));
       border-radius:999px;
@@ -212,6 +197,13 @@
       z-index: 1;
     }
 
+    /* Eye SVG */
+    .eyeSvg{ width: calc(20px * var(--ui)); height: calc(20px * var(--ui)); display:block; }
+    .eyeBtn .eyeOpen{ display:block; }
+    .eyeBtn .eyeClosed{ display:none; }
+    .eyeBtn.active .eyeOpen{ display:none; }
+    .eyeBtn.active .eyeClosed{ display:block; }
+
     .pausePill{
       position:absolute;left:50%;top:calc(64px * var(--ui));
       transform:translateX(-50%);
@@ -222,27 +214,6 @@
       backdrop-filter: blur(10px);
       font-weight:900;
     }
-
-    /* Eye button (bottom-left) */
-    .eyeBtn{
-      position:absolute;
-      left: calc(14px * var(--ui));
-      bottom: calc(14px * var(--ui));
-      width: calc(44px * var(--ui));
-      height: calc(44px * var(--ui));
-      border-radius: 999px;
-      border:1px solid rgba(255,255,255,.18);
-      background: var(--glass2);
-      color: rgba(255,255,255,.92);
-      cursor:pointer;
-      user-select:none;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 14px 50px rgba(0,0,0,.35);
-      display:grid;
-      place-items:center;
-      z-index: 30; /* above chrome */
-    }
-    .eyeBtn svg{ width: calc(18px * var(--ui)); height: calc(18px * var(--ui)); opacity:.95; }
 
     /* ---------- Text Layers ---------- */
     .textArea{
@@ -428,6 +399,25 @@
     }
     .infoOrb .i{font-weight:900;font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;}
 
+    /* ---------- UI Hide (IMMERSIVE MODE) ---------- */
+    .hideableUI{
+      transition: opacity .22s ease, transform .22s ease, filter .22s ease;
+      will-change: opacity, transform, filter;
+    }
+    .frame.uiHidden .hideableUI{
+      opacity: 0 !important;
+      transform: translateY(-8px) scale(.98);
+      filter: blur(1px);
+      pointer-events: none !important;   /* THIS is what stops the "invisible click" */
+    }
+    /* Make sure the verse circle & info are truly non-interactive when hidden */
+    .frame.uiHidden .navCircle,
+    .frame.uiHidden .infoOrb,
+    .frame.uiHidden .gearBtn,
+    .frame.uiHidden .helpBtn{
+      pointer-events:none !important;
+    }
+
     /* ---------- End overlay ---------- */
     .endOverlay{
       position:absolute; inset:0;
@@ -573,7 +563,6 @@
       pointer-events:auto;
       background: rgba(0,0,0,.62);
       backdrop-filter: blur(10px);
-      overflow:hidden; /* prevents any horizontal flash */
     }
     .wizard .sheet{
       position:absolute;
@@ -587,7 +576,6 @@
       box-shadow: var(--shadow);
       overflow:hidden;
       padding: calc(14px * var(--ui));
-      contain: layout paint; /* helps stop scrollbar flash on first interaction */
     }
 
     .wizSearchRow{
@@ -600,7 +588,6 @@
       border-radius: calc(12px * var(--ui));
       padding: calc(10px * var(--ui)) calc(12px * var(--ui));
       margin-bottom: calc(12px * var(--ui));
-      overflow:hidden; /* no horizontal overflow when pop anim hits */
     }
     .wizSearchRow input{
       width:100%;
@@ -610,25 +597,19 @@
       color: rgba(255,255,255,.92);
       font-size: calc(14px * var(--ui));
       font-weight: 700;
-      min-width:0;
     }
     .wizSearchRow .icon{
       opacity:.85;
       font-size: calc(16px * var(--ui));
       user-select:none;
-      flex:0 0 auto;
     }
 
     .wizList{
       max-height: min(38vh, 360px);
       overflow:auto;
-      overflow-x:hidden; /* FIX: prevent horizontal scrollbar flash */
       -webkit-overflow-scrolling: touch;
       padding-right: 6px;
       margin-bottom: calc(12px * var(--ui));
-      scrollbar-gutter: stable; /* reduces first-time layout shift */
-      overscroll-behavior: contain;
-      -webkit-overflow-scrolling: touch;
     }
     .wizItem{
       width:100%;
@@ -643,8 +624,6 @@
       text-align:center;
       color: rgba(255,255,255,.92);
       user-select:none;
-      overflow:hidden; /* FIX: avoid overflow during pop scale */
-      transform-origin: center;
     }
     .wizItem.active{
       border-color: rgba(110,231,255,.55);
@@ -705,8 +684,6 @@
       text-align:center;
       color: rgba(255,255,255,.92);
       user-select:none;
-      overflow:hidden;
-      transform-origin:center;
     }
     .wizVerseItem.active{
       border-color: rgba(110,231,255,.55);
@@ -903,7 +880,6 @@
     @media (prefers-reduced-motion: reduce){
       .demoHand{animation:none}
       .hl,.hlGold{animation:none}
-      .frame.uiHidden .chrome{transition:none}
     }
   </style>
 </head>
@@ -914,7 +890,7 @@
     <div class="stage">
       <div class="frame" id="frame">
 
-        <div class="progress dimTarget chrome" id="progressWrap"><div class="bar" id="pbar"></div></div>
+        <div class="progress dimTarget hideableUI" id="progressWrap"><div class="bar" id="pbar"></div></div>
 
         <div class="fallbackBg dimTarget" id="fallbackBg"></div>
 
@@ -927,19 +903,38 @@
 
         <div class="vignette dimTarget" id="vignette"></div>
 
-        <div class="overlayTop dimTarget chrome" id="overlayTop">
+        <div class="overlayTop dimTarget" id="overlayTop">
           <div class="leftTop"></div>
           <div class="rightTop">
-            <button class="gearBtn" id="btnGear" type="button" title="Settings">⚙️</button>
-            <button class="helpBtn" id="btnHelp" type="button" title="Help">?</button>
+            <button class="gearBtn hideableUI" id="btnGear" type="button" title="Settings">⚙️</button>
+
+            <!-- Eye button at top-middle position between gear and help -->
+            <button class="eyeBtn" id="btnEye" type="button" title="Immersive UI">
+              <!-- open eye -->
+              <svg class="eyeSvg eyeOpen" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" stroke="rgba(255,255,255,.92)" stroke-width="1.8" />
+                <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" stroke="rgba(255,255,255,.92)" stroke-width="1.8" />
+                <path d="M12 11.3c.95 0 1.7.75 1.7 1.7" stroke="rgba(255,255,255,.92)" stroke-width="1.8" stroke-linecap="round" opacity=".65"/>
+              </svg>
+              <!-- closed eye -->
+              <svg class="eyeSvg eyeClosed" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M3 12s3.5-7 9-7 9 7 9 7" stroke="rgba(255,255,255,.60)" stroke-width="1.8" opacity=".0"/>
+                <path d="M4 12c2.5 2.8 5.2 4.2 8 4.2 2.8 0 5.5-1.4 8-4.2" stroke="rgba(255,255,255,.92)" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M8 15.2l-2 2" stroke="rgba(255,255,255,.72)" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M18 15.2l2 2" stroke="rgba(255,255,255,.72)" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M12 16l0 2.4" stroke="rgba(255,255,255,.72)" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            </button>
+
+            <button class="helpBtn hideableUI" id="btnHelp" type="button" title="Help">?</button>
           </div>
         </div>
 
-        <div class="pausePill dimTarget chrome" id="pausePill">Paused</div>
+        <div class="pausePill dimTarget" id="pausePill">Paused</div>
 
         <div class="textArea dimTarget" id="textArea"></div>
 
-        <div class="badge dimTarget chrome" id="badge">
+        <div class="badge dimTarget hideableUI" id="badge">
           <div class="badgeRow">
             <div></div>
 
@@ -958,14 +953,6 @@
             </div>
           </div>
         </div>
-
-        <!-- Eye / immersive UI toggle (stays visible) -->
-        <button class="eyeBtn" id="btnEye" type="button" title="Immersive mode">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M2.2 12s3.5-7 9.8-7 9.8 7 9.8 7-3.5 7-9.8 7S2.2 12 2.2 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
 
         <div class="endOverlay" id="endOverlay" aria-hidden="true">
           <div class="endCard">
@@ -1133,7 +1120,7 @@
   const audio = el('audio');
   const pbar = el('pbar');
 
-  // Eye
+  // Eye (immersive UI)
   const btnEye = el('btnEye');
   let uiHidden = false;
 
@@ -1332,6 +1319,44 @@
     if (ended) return;
     setPaused(!paused);
   }
+
+  // ---------- Immersive UI toggle (REAL hide: pointer-events + logic gate) ----------
+  function setUIHidden(on){
+    uiHidden = !!on;
+    frame.classList.toggle("uiHidden", uiHidden);
+    btnEye.classList.toggle("active", uiHidden);
+    btnEye.setAttribute("aria-pressed", uiHidden ? "true" : "false");
+
+    // Make hidden elements unfocusable too (so it feels like they don't exist)
+    const hideables = frame.querySelectorAll(".hideableUI");
+    hideables.forEach(n=>{
+      if (!(n instanceof HTMLElement)) return;
+      if (uiHidden){
+        n.dataset._tabindex = (n.getAttribute("tabindex") ?? "");
+        n.setAttribute("tabindex","-1");
+        n.setAttribute("aria-hidden","true");
+      } else {
+        const prev = n.dataset._tabindex;
+        if (prev === "") n.removeAttribute("tabindex");
+        else if (prev != null) n.setAttribute("tabindex", prev);
+        n.removeAttribute("aria-hidden");
+      }
+    });
+
+    // If a modal is open, keep it usable (modals are not hideableUI)
+  }
+
+  btnEye.addEventListener("pointerdown", (e)=>{
+    suppressFrameTap();
+    e.preventDefault(); e.stopPropagation();
+  }, {passive:false});
+
+  btnEye.addEventListener("click", (e)=>{
+    suppressFrameTap();
+    e.preventDefault(); e.stopPropagation();
+    popFx(btnEye);
+    setUIHidden(!uiHidden);
+  });
 
   async function loadSurahs(){
     try{
@@ -1610,7 +1635,6 @@
     fitLayerToAvoidOverlap(currentLayer);
   }
 
-  // ---------- Media Session best effort ----------
   function supportsMediaSession(){ return "mediaSession" in navigator; }
   function updateMediaSession(){
     if (!supportsMediaSession() || !current) return;
@@ -1734,15 +1758,9 @@
       applySegment(idx, true);
       updateMediaSession();
 
-      // FIX: first-time demo run must behave exactly like the "?" demo.
       if (!sessionStorage.getItem("qvz_demo_seen")){
         sessionStorage.setItem("qvz_demo_seen","1");
-        // wait for UI paint + layout before starting demo (prevents first-run highlight issues)
-        requestAnimationFrame(()=>{
-          requestAnimationFrame(()=>{
-            setTimeout(()=> startDemo(true), 0);
-          });
-        });
+        setTimeout(()=> startDemo(true), 380);
       }
 
     }catch(e){
@@ -2145,10 +2163,12 @@
     if (e.key === "ArrowUp"){ ensureUserGesture(); if(current && wizard.style.display!=="block") next(true); }
     if (e.key === "ArrowDown"){ ensureUserGesture(); if(current && wizard.style.display!=="block") prev(true); }
     if (e.key.toLowerCase() === "f"){ toggleFullscreen(); }
+    if (e.key.toLowerCase() === "i"){ setUIHidden(!uiHidden); }
   });
 
   // Settings
   function openSettings(){
+    if (uiHidden) return; // hard gate
     suppressFrameTap();
     ensureUserGesture();
     settingsModal.style.display = "block";
@@ -2245,10 +2265,7 @@
       const row = document.createElement("div");
       row.className = "wizItem" + (s.file === wizSelectedFile ? " active" : "");
       row.textContent = s.title ? s.title : s.file;
-
       row.addEventListener("click", async ()=>{
-        // FIX: prevent first-click horizontal scrollbar flash inside list
-        // (pop animation can temporarily overflow; list is overflow-x hidden now)
         popFx(row);
         wizSelectedFile = s.file;
         try{
@@ -2309,7 +2326,6 @@
     wizStep2.classList.toggle("active", step === 2);
   }
 
-  // ---- KEYBOARD RULE: inputs stay readonly until user taps search row ----
   function armInputForTap(inputEl, rowEl){
     const enableAndFocus = ()=>{
       if (!inputEl) return;
@@ -2361,7 +2377,7 @@
 
     setWizardStep(1);
 
-    const afterLoad = ()=>{
+    const init = ()=>{
       if (current?.file){
         wizSelectedFile = current.file;
         wizParsed = current;
@@ -2377,9 +2393,9 @@
     };
 
     if (forceFresh || !surahs.length){
-      loadSurahs().then(afterLoad);
+      loadSurahs().then(init);
     } else {
-      afterLoad();
+      init();
     }
   }
 
@@ -2434,10 +2450,12 @@
 
   wizard.addEventListener("click", (e)=>{ if (e.target === wizard) closeWizard(); });
 
+  // Verse circle opens wizard (HARD GATE when uiHidden)
   navCircle.addEventListener("pointerdown", (e)=>{ suppressFrameTap(); e.preventDefault(); e.stopPropagation(); }, {passive:false});
   navCircle.addEventListener("click", (e)=>{
     e.preventDefault();
     e.stopPropagation();
+    if (uiHidden) return;            // logic-level hide
     glowCircle();
     openWizard(false);
   });
@@ -2468,6 +2486,10 @@
     frame.classList.add("demoActive");
     clearNoDim();
 
+    // IMPORTANT: temporarily show UI (so first-run demo matches "?" demo perfectly)
+    const prevHidden = uiHidden;
+    if (prevHidden) setUIHidden(false);
+
     if (current){
       stopTimers();
       try{ audio.pause(); }catch(_){}
@@ -2479,8 +2501,10 @@
     demo.style.display = "block";
     demo.setAttribute("aria-hidden","false");
 
-    // ensure the demo render happens after layout (fixes first-run highlight visibility)
-    requestAnimationFrame(()=>renderDemoStep());
+    // store whether it was hidden; restore after demo ends
+    demo.dataset._restoreUiHidden = prevHidden ? "1" : "0";
+
+    renderDemoStep();
   }
 
   function resumeAfterDemo(){
@@ -2489,6 +2513,10 @@
 
     demo.style.display = "none";
     demo.setAttribute("aria-hidden","true");
+
+    // restore immersive ui state if it was on before demo
+    const restore = demo.dataset._restoreUiHidden === "1";
+    if (restore) setUIHidden(true);
 
     if (!current || ended) return;
 
@@ -2510,7 +2538,7 @@
 
     const steps = [
       { text: "Swipe up/down to move between verses.", mini: true,  highlight: null },
-      { text: "Use ⚙️ Settings to toggle Arabic, background, autoplay, fullscreen. Tap ❔ to see this demo again.", mini: false, highlight: "gear" },
+      { text: "Use ⚙️ Settings to toggle Arabic, background, autoplay, fullscreen. Tap ? to see this demo again.", mini: false, highlight: "gear" },
       { text: "Tap the VERSE button to pick a surah + verse, then press Play.", mini: false, highlight: "nav" },
       { text: "If extra info exists for a verse, tap the info button i.", mini: false, highlight: "info" }
     ];
@@ -2568,33 +2596,21 @@
     suppressFrameTap();
     e.preventDefault(); e.stopPropagation();
     popFx(btnHelp);
+    if (uiHidden) setUIHidden(false); // ensure demo always works visibly
     startDemo(true);
   });
 
+  // Button pointerdown suppression
   btnGear.addEventListener("pointerdown", (e)=>{ suppressFrameTap(); e.preventDefault(); e.stopPropagation(); }, {passive:false});
   btnHelp.addEventListener("pointerdown", (e)=>{ suppressFrameTap(); e.preventDefault(); e.stopPropagation(); }, {passive:false});
   infoOrb.addEventListener("pointerdown", (e)=>{ suppressFrameTap(); e.preventDefault(); e.stopPropagation(); }, {passive:false});
-
-  // ---------- Eye / Immersive UI ----------
-  function setUIHidden(on){
-    uiHidden = !!on;
-    frame.classList.toggle("uiHidden", uiHidden);
-    // Don’t let hidden UI eat taps
-    suppressFrameTap();
-  }
-  btnEye.addEventListener("pointerdown", (e)=>{ suppressFrameTap(); e.preventDefault(); e.stopPropagation(); }, {passive:false});
-  btnEye.addEventListener("click", (e)=>{
-    suppressFrameTap();
-    e.preventDefault(); e.stopPropagation();
-    popFx(btnEye);
-    setUIHidden(!uiHidden);
-  });
 
   // Optional: open wizard on first load
   function boot(){
     updateUIScale();
     setToggleUI();
     stopPlayback();
+    setUIHidden(false);   // default: UI visible, eye = open
     openWizard(true);
   }
   boot();
