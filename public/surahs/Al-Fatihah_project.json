@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "surah": "Surah Fatihah",
+    "reciter": "Mishary Al Afasy",
+    "fps": 30,
+    "resolution_land": "1920x1080",
+    "resolution_port": "1080x1920"
+  },
+  "layout": {
+    "landFont": 45,
+    "portFont": 35,
+    "lineHeight": 1.22
+  },
+  "segments": [
+    {
+      "id": "1:1",
+      "type": "ayah",
+      "ayah": 1,
+      "part": 1,
+      "start": 0,
+      "end": 4.608,
+      "text_ar": "asdf",
+      "en_orig": "asdf",
+      "en_land": "asdf",
+      "en_port": "asdf",
+      "fonts": {
+        "land": 45,
+        "port": 35
+      },
+      "video": {
+        "url": "http://localhost:5500/videos/20250210_2222_Lone%20Wolf%20Vigil_simple_compose_01jkqshjhzfptabt0yr28bwbfp.mp4",
+        "brightness": 0.55
+      }
+    }
+  ]
+}

@@ -1,0 +1,2264 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Quran Viz Timestamp Editor</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Naskh+Arabic:wght@500;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#07080b;
+      --ink:#e8e9ec;
+      --muted:#a9b0bd;
+      --gold:#c9a66a;
+
+      --radius:16px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --sans: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      --arabic: "Noto Naskh Arabic", serif;
+    }
+
+    html, body{height:100%}
+    body{
+      margin:0;
+      background:radial-gradient(1200px 600px at 70% 0%, #101827 0%, var(--bg) 45%);
+      color:var(--ink);
+      font-family:var(--sans);
+    }
+    .wrap{max-width:none;margin:0;padding:16px;}
+    h1{font-size:18px;margin:0 0 12px 0;color:#dbe7ff;letter-spacing:.2px}
+
+    .grid{display:grid;grid-template-columns: 560px 1fr;gap:12px}
+
+    .card{
+      background:rgba(15,20,28,.92);
+      border:1px solid rgba(255,255,255,.07);
+      border-radius:var(--radius);
+      box-shadow: 0 18px 60px rgba(0,0,0,.45)
+    }
+    .card .hd{
+      padding:12px 12px 10px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
+    }
+    .card .bd{padding:12px}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    label{font-size:12px;color:var(--muted)}
+    input, textarea, select{
+      width:100%; box-sizing:border-box;
+      background:rgba(6,8,12,.75);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:12px;
+      padding:10px 10px;
+      color:var(--ink);
+      outline:none;
+    }
+    input:focus, textarea:focus, select:focus{
+      border-color: rgba(255,255,255,.35);
+      box-shadow:0 0 0 3px rgba(255,255,255,.08)
+    }
+    textarea{min-height:74px;resize:vertical;line-height:1.35}
+
+    .btn{
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.06);
+      color:var(--ink);
+      padding:10px 12px;border-radius:12px;cursor:pointer;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .btn:hover{background:rgba(255,255,255,.09)}
+    .btn.primary{border-color: rgba(255,255,255,.28); background: rgba(255,255,255,.10)}
+    .btn.good{border-color: rgba(94,242,165,.45); background: rgba(94,242,165,.12)}
+    .btn.warn{border-color: rgba(255,211,110,.45); background: rgba(255,211,110,.12)}
+    .btn.bad{border-color: rgba(255,110,110,.45); background: rgba(255,110,110,.12)}
+    .btn:disabled{opacity:.45;cursor:not-allowed}
+
+    .pill{
+      font-size:12px;border:1px solid rgba(255,255,255,.10);
+      border-radius:999px;padding:6px 10px;color:var(--muted)
+    }
+    .mono{font-family:var(--mono)}
+    .sep{height:1px;background:rgba(255,255,255,.06);margin:12px 0}
+    .small{font-size:12px;color:var(--muted)}
+    .help{font-size:12px;color:rgba(219,231,255,.75);line-height:1.4}
+
+    .timebar{display:flex;gap:10px;align-items:center}
+    .time{font-family:var(--mono);font-size:13px;color:#dbe7ff}
+    .meter{height:10px;background:rgba(255,255,255,.06);border-radius:999px;overflow:hidden;flex:1}
+    .fill{height:100%;background:linear-gradient(90deg, rgba(255,255,255,.55), rgba(201,166,106,.40));width:0%}
+
+    .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px 8px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:top}
+    th{font-size:12px;text-align:left;color:var(--muted);font-weight:600}
+    td{font-size:13px}
+
+    /* PREVIEW */
+    .stageRow{display:grid;grid-template-columns: 1fr 1fr; gap:12px}
+    .stage{
+      display:flex;justify-content:center;align-content:center;align-items:center;
+      padding:10px;border-radius:16px;
+      background:rgba(0,0,0,.22);
+      border:1px solid rgba(255,255,255,.06);
+    }
+    .screen{
+      position:relative;
+      border-radius:22px;
+      overflow:hidden;
+      background:#05060a;
+      border:1px solid rgba(255,255,255,.10);
+      box-shadow: 0 18px 60px rgba(0,0,0,.55);
+      user-select:none;
+    }
+    .screen.landscape{width:860px; height:484px;}
+    .screen.portrait{width:360px; height:640px;}
+
+    .bgVideo{
+      position:absolute; inset:0;
+      width:100%; height:100%;
+      object-fit:cover;
+      transform: scale(1.02);
+      filter: brightness(var(--bgBright, 0.55));
+      opacity: 0.98;
+      pointer-events:none;
+      transition: opacity .15s ease;
+    }
+    .bgVideo.hiddenBg{ opacity: 0; }
+
+    .fallbackBg{
+      position:absolute; inset:0;
+      background:
+        radial-gradient(800px 500px at 60% 10%, rgba(255,180,120,.08), rgba(0,0,0,0) 55%),
+        radial-gradient(900px 700px at 30% 90%, rgba(255,255,255,.05), rgba(0,0,0,0) 60%),
+        linear-gradient(180deg, #05060a, #02030a);
+      pointer-events:none;
+    }
+    .vignette{
+      position:absolute; inset:0;
+      background:radial-gradient(circle at center, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.55) 72%, rgba(0,0,0,0.86) 100%);
+      pointer-events:none;
+    }
+
+    .centerTextArea{
+      position:absolute; inset:0;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      padding: 28px;
+      pointer-events:none;
+    }
+
+    .stack{
+      width:100%;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.22;
+      letter-spacing: .2px;
+      text-shadow: 0 2px 22px rgba(0,0,0,.75);
+      font-weight: 800;
+    }
+    .en{color: var(--gold);font-family: var(--sans);}
+    .ar{
+      color:#fff;
+      font-family: var(--arabic);
+      direction: rtl;
+      font-weight:700;
+      opacity:.95;
+    }
+    .ar.hidden{display:none;}
+
+    /* Top-right toggles INSIDE screens */
+    .screenToggles{
+      position:absolute;
+      top:14px;
+      right:14px;
+      display:flex;
+      gap:10px;
+      z-index: 55;
+      pointer-events:auto;
+    }
+    .togBtn{
+      font-size:12px;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(0,0,0,.22);
+      color: rgba(255,255,255,.88);
+      cursor:pointer;
+      user-select:none;
+      backdrop-filter: blur(6px);
+      letter-spacing:.2px;
+    }
+    .togBtn:hover{
+      background: rgba(255,255,255,.10);
+      border-color: rgba(255,255,255,.32);
+    }
+    .togBtn.on{
+      background: rgba(255,255,255,.18);
+      border-color: rgba(255,255,255,.55);
+      color: rgba(255,255,255,.95);
+      box-shadow: 0 0 0 3px rgba(255,255,255,.08);
+    }
+
+    .bottomBadge{
+      position:absolute;
+      left:0; right:0;
+      bottom: 26px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:10px;
+      pointer-events:none;
+    }
+
+    /* Key change: add a RIGHT gutter so info orb aligns with toggle row */
+    .badgeRow{
+      display:grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items:center;
+      width:100%;
+      padding-left: 18px;
+      padding-right: 14px;
+      pointer-events:none;
+    }
+
+    .verseCircle{
+      grid-column: 2 / 3;
+      width:54px;height:54px;
+      border-radius:999px;
+      border:1px solid rgba(201,166,106,.45);
+      display:flex;flex-direction:column;
+      align-items:center;justify-content:center;
+      color: rgba(201,166,106,.95);
+      background: rgba(0,0,0,.15);
+      backdrop-filter: blur(4px);
+      pointer-events:none;
+      justify-self:center;
+    }
+    .verseCircle .top{font-size:9px;letter-spacing:1.6px;opacity:.95}
+    .verseCircle .num{font-size:16px;font-weight:800;margin-top:2px}
+
+    .surahName{
+      font-size:11px;
+      letter-spacing:2px;
+      color: rgba(201,166,106,.70);
+      text-transform:uppercase;
+      pointer-events:none;
+    }
+
+    /* Info icon — far right */
+    .infoOrb{
+      grid-column: 3 / 4;
+      justify-self:end;
+      width:54px;height:54px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.55);
+      background: rgba(0,0,0,.18);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      backdrop-filter: blur(4px);
+      pointer-events:auto;
+      cursor:pointer;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      z-index: 50;
+      margin-right: 20px;
+    }
+    .infoOrb:hover{
+      background: rgba(255,255,255,.10);
+      border-color: rgba(255,255,255,.80);
+    }
+    .infoOrb .i{
+      font-family: var(--mono);
+      font-weight:900;
+      color: rgba(255,255,255,.92);
+      font-size:16px;
+      letter-spacing:.2px;
+      transform: translateY(-1px);
+    }
+
+    /* FULLSCREEN INLINE INFO CARD (inside screen) */
+    .infoFull{
+      position:absolute;
+      inset:0;
+      display:none;
+      z-index: 60;
+      pointer-events:auto;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(10px);
+    }
+    .infoFull .panel{
+      position:absolute;
+      inset:0;
+      display:flex;
+      flex-direction:column;
+      background: rgba(10,12,16,.86);
+    }
+
+    .infoFull .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:10px;
+      padding:12px 14px;
+      border-bottom:1px solid rgba(255,255,255,.10);
+    }
+    .infoFull .close{
+      width:40px;height:40px;border-radius:999px;
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.06);
+      color: rgba(255,255,255,.92);
+      cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      font-weight:900;
+      user-select:none;
+      flex:0 0 auto;
+    }
+    .infoFull .close:hover{
+      background: rgba(255,255,255,.10);
+      border-color: rgba(255,255,255,.35);
+    }
+
+    .infoFull .content{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+    }
+
+    .infoFull .media{
+      width:100%;
+      height:44%;
+      min-height:180px;
+      background:#05060a;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      flex:0 0 auto;
+    }
+    .infoFull .media iframe,
+    .infoFull .media video,
+    .infoFull .media img{
+      width:100%;
+      height:100%;
+      display:block;
+      object-fit:contain;
+      background:#05060a;
+      border:0;
+    }
+
+    .infoFull .text{
+      flex:1;
+      overflow:auto;
+      padding:14px 16px;
+      font-size:14px;
+      line-height:1.55;
+      color: rgba(232,233,236,.92);
+      white-space:pre-wrap;
+      word-break: break-word;
+    }
+
+    .infoFull .text.empty{
+      color: rgba(219,231,255,.65);
+      font-size:13px;
+    }
+
+    .moreBox{
+      margin-top:10px;
+      border:1px dashed rgba(255,255,255,.12);
+      border-radius:14px;
+      padding:10px;
+      background: rgba(0,0,0,.16);
+      display:none;
+    }
+    .moreBox .headRow{
+      display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+      margin-bottom:8px;
+    }
+    .kHint{
+      font-size:12px;color:rgba(219,231,255,.70);
+      line-height:1.35;
+    }
+
+    .controlsHeader{
+      display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;
+    }
+    .playbar{
+      display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;
+      margin-left:auto;
+    }
+    .scrub{width:260px;}
+
+    .modeBanner{
+      width:100%;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.20);
+    }
+    .modeBanner.editing{
+      border-color: rgba(255,211,110,.45);
+      background: rgba(255,211,110,.10);
+      box-shadow: 0 0 0 3px rgba(255,211,110,.08);
+    }
+    .modeTitle{display:flex;flex-direction:column;gap:2px}
+    .modeTitle .t{font-weight:800;letter-spacing:.2px;color:#ffe7b6;font-size:13px;}
+    .modeTitle .s{color:rgba(255,231,182,.75);font-size:12px;}
+    .dirtyBadge{
+      display:inline-flex;align-items:center;gap:8px;
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,211,110,.35);
+      background: rgba(255,211,110,.10);
+      color:#ffe7b6;
+      font-family:var(--mono);
+    }
+    .dot{
+      width:8px;height:8px;border-radius:99px;background:rgba(255,211,110,.95);
+      box-shadow:0 0 0 3px rgba(255,211,110,.18);
+    }
+    .fieldEdited{
+      outline: 2px solid rgba(255,211,110,.35);
+      box-shadow: 0 0 0 3px rgba(255,211,110,.08);
+    }
+
+    @media (max-width: 1180px){
+      .grid{grid-template-columns: 1fr}
+      .screen.landscape{width:100%; height:auto; aspect-ratio:16/9}
+      .screen.portrait{width:100%; height:auto; aspect-ratio:9/16}
+      .stageRow{grid-template-columns:1fr}
+      .infoFull .media{height:38%}
+    }
+  </style>
+</head>
+
+<body>
+<div class="wrap">
+  <h1>Quran Viz Timestamp Editor <span class="pill">Arabic + Background toggles inside screens</span></h1>
+
+  <div class="grid">
+    <!-- LEFT -->
+    <div class="card">
+      <div class="hd">
+        <div class="pill mono" id="statusPill">No audio loaded</div>
+        <div class="row">
+          <button class="btn" id="btnUndo" disabled>Undo</button>
+          <button class="btn" id="btnPreview">Preview ▶</button>
+          <button class="btn primary" id="btnImportJson">Import JSON</button>
+          <button class="btn" id="btnExportJson">Export JSON</button>
+          <!-- NEW -->
+          <button class="btn warn" id="btnExportBat">Export .BAT (split audio)</button>
+        </div>
+      </div>
+
+      <div class="bd">
+        <div class="two">
+          <div>
+            <label>Audio URL (export/import)</label>
+            <input id="audioUrl" class="mono" placeholder="e.g., audios/C12_R1.mp3 or https://.../file.mp3"/>
+            <div class="help" style="margin-top:6px">
+              Saved into JSON as <span class="mono">meta.audio_url</span>.
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:10px">
+            <div>
+              <label>&nbsp;</label>
+              <button class="btn primary" id="btnLoadAudioUrl">Load from URL</button>
+            </div>
+            <div class="small">Tip: host audio somewhere reachable and paste the link.</div>
+          </div>
+        </div>
+
+        <!-- NEW: BAT settings -->
+        <div class="sep"></div>
+        <div class="two">
+          <div>
+            <label>FFmpeg bin folder (Windows)</label>
+            <input id="ffmpegBin" class="mono" placeholder="C:\ffmpeg\bin">
+            <div class="help" style="margin-top:6px">
+              Your BAT will use: <span class="mono">%FFMPEG_BIN%\ffmpeg.exe</span>
+            </div>
+          </div>
+          <div>
+            <label>Audio chunks folder (relative)</label>
+            <input id="chunksFolder" class="mono" placeholder="audios/C12_R1/">
+            <div class="help" style="margin-top:6px">
+              Output file example: <span class="mono">audios/C12_R1/C12_R1_1_1.m4a</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="two" style="margin-top:10px">
+          <div>
+            <label>Chunk format</label>
+            <input id="chunkFormat" class="mono" value="m4a">
+            <div class="small">Recommended: m4a (AAC)</div>
+          </div>
+          <div>
+            <label>Audio bitrate (AAC)</label>
+            <input id="chunkBitrate" class="mono" value="192k">
+            <div class="small">Example: 128k / 192k / 256k</div>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="row">
+          <audio id="audio" controls style="width:100%"></audio>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <button class="btn good" id="btnMarkStart">Mark Start [S]</button>
+          <button class="btn warn" id="btnMarkEnd">Mark End [E]</button>
+          <button class="btn bad" id="btnClearTimes">Clear Times</button>
+          <div class="pill mono" id="timeHint">start=— end=—</div>
+        </div>
+
+        <div class="row timebar" style="margin-top:10px">
+          <div class="time" id="tNow">00:00.000</div>
+          <div class="meter"><div class="fill" id="fill"></div></div>
+          <div class="time" id="tDur">00:00.000</div>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <button class="btn" id="btnBack">-0.5s</button>
+          <button class="btn" id="btnFwd">+0.5s</button>
+          <button class="btn" id="btnBackBig">-2s</button>
+          <button class="btn" id="btnFwdBig">+2s</button>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="two">
+          <div>
+            <label>Surah name (badge + export)</label>
+            <input id="metaSurah" placeholder="e.g., SURAH YUSUF"/>
+          </div>
+          <div>
+            <label>Reciter (optional)</label>
+            <input id="metaReciter" placeholder="e.g., Mishary Rashid"/>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="modeBanner" id="modeBanner">
+          <div class="modeTitle">
+            <div class="t" id="modeTitle">Not editing</div>
+            <div class="s" id="modeSub">Click “Edit” on a verse to modify it.</div>
+          </div>
+          <div class="row" style="margin-left:auto">
+            <div class="dirtyBadge" id="dirtyBadge" style="display:none">
+              <span class="dot"></span>
+              UNSAVED CHANGES
+            </div>
+            <button class="btn good" id="btnSaveEdit" disabled>Save changes</button>
+            <button class="btn bad" id="btnCancelEdit" disabled>Cancel</button>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="three">
+          <div>
+            <label>Verse #</label>
+            <input id="ayahNum" type="number" min="1" step="1" placeholder="e.g., 1"/>
+          </div>
+          <div>
+            <label>Part</label>
+            <input id="ayahPart" type="number" min="1" step="1" value="1"/>
+          </div>
+          <div>
+            <label>ID (auto)</label>
+            <input id="segId" class="mono" disabled/>
+          </div>
+        </div>
+
+        <div class="two" style="margin-top:10px">
+          <div>
+            <label>Start (sec)</label>
+            <input id="segStart" class="mono" placeholder="Press [S]" />
+          </div>
+          <div>
+            <label>End (sec)</label>
+            <input id="segEnd" class="mono" placeholder="Press [E]" />
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="two">
+          <div>
+            <label>Background video URL (per verse)</label>
+            <input id="bgVideoUrl" class="mono" placeholder="e.g., https://.../bg.mp4 or local path"/>
+          </div>
+          <div>
+            <label>Video brightness (0.20–1.00)</label>
+            <input id="bgBrightness" class="mono" type="number" step="0.05" min="0.2" max="1" value="0.55"/>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div>
+          <label>Arabic text (required)</label>
+          <textarea id="textAr" style="font-family: var(--arabic); direction: rtl; text-align:right" placeholder="Paste Arabic here…"></textarea>
+        </div>
+
+        <div class="sep"></div>
+
+        <div>
+          <label>Original English text (source)</label>
+          <textarea id="textEnOrig" placeholder="Paste the original English here…"></textarea>
+          <div class="help" style="margin-top:6px">Original auto-syncs into Landscape + Portrait (you can still override them).</div>
+        </div>
+
+        <div class="two" style="margin-top:10px">
+          <div>
+            <label>English (Landscape)</label>
+            <textarea id="textEnLand" placeholder="Landscape English text…"></textarea>
+          </div>
+          <div>
+            <label>English (Portrait)</label>
+            <textarea id="textEnPort" placeholder="Portrait English text…"></textarea>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="row">
+          <button class="btn primary" id="btnMoreInfoToggle">More information</button>
+          <div class="kHint">If you add info, the on-screen <span class="mono">i</span> appears (far right).</div>
+        </div>
+
+        <div class="moreBox" id="moreBox">
+          <div class="headRow">
+            <div class="pill mono" id="moreStatus">No info yet</div>
+            <button class="btn bad" id="btnClearInfo">Clear info</button>
+          </div>
+          <div class="two">
+            <div>
+              <label>Media link (image/video/YouTube)</label>
+              <input id="infoMedia" class="mono" placeholder="https://... (optional)"/>
+              <div class="small" style="margin-top:6px">Supports image URL, direct video (.mp4/.webm), or YouTube.</div>
+            </div>
+            <div>
+              <label>&nbsp;</label>
+              <div class="small">If no media is linked, the info card shows only the text.</div>
+            </div>
+          </div>
+          <div style="margin-top:10px">
+            <label>Information text</label>
+            <textarea id="infoText" placeholder="Write details about this verse…"></textarea>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="row">
+          <button class="btn good" id="btnAdd" disabled>Add Verse [A]</button>
+          <button class="btn bad" id="btnClearAll">Clear form</button>
+        </div>
+
+        <div class="small" style="margin-top:10px;line-height:1.4">
+          Undo affects: Add / Save edit / Delete selected / Import / Sort.
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="card">
+      <div class="hd">
+        <div class="row">
+          <div class="pill mono" id="countPill">0 verses</div>
+          <div class="pill mono" id="rangePill">range: —</div>
+        </div>
+        <div class="row" style="margin-left:auto">
+          <button class="btn" id="btnSort">Sort by time</button>
+          <button class="btn bad" id="btnDeleteSelected" disabled>Delete selected</button>
+        </div>
+      </div>
+
+      <div class="bd">
+        <div class="controlsHeader">
+          <div class="row">
+            <div style="width:170px">
+              <label>Landscape font (px)</label>
+              <input id="landFont" class="mono" type="number" min="10" max="200" value="45"/>
+            </div>
+            <div style="width:170px">
+              <label>Portrait font (px)</label>
+              <input id="portFont" class="mono" type="number" min="10" max="200" value="35"/>
+            </div>
+            <div class="row" style="margin-top:16px">
+              <button class="btn" id="btnDefaultFonts">Default font</button>
+            </div>
+          </div>
+
+          <div class="playbar">
+            <div style="width:200px">
+              <label>Preview from verse #</label>
+              <input id="previewFromVerse" class="mono" type="number" min="1" placeholder="e.g., 1"/>
+            </div>
+            <button class="btn" id="btnPlayPreview">Play</button>
+            <button class="btn" id="btnStopPreview">Stop</button>
+            <input id="previewScrub" class="scrub" type="range" min="0" max="1000" value="0">
+            <div class="pill mono" id="previewTime">00:00.000</div>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="stageRow">
+          <div class="stage">
+            <div class="screen landscape" id="screenLand" style="--bgBright:0.55">
+              <div class="fallbackBg"></div>
+              <video class="bgVideo" id="bgLand" muted loop playsinline></video>
+              <div class="vignette"></div>
+
+              <div class="screenToggles">
+                <button class="togBtn on" id="btnArabicLand">Arabic</button>
+                <button class="togBtn on" id="btnBgLand">Background</button>
+              </div>
+
+              <div class="centerTextArea">
+                <div class="stack">
+                  <div class="ar" id="arLand">اكتب العربية…</div>
+                  <div class="en" id="enLand">Type English…</div>
+                </div>
+              </div>
+
+              <div class="bottomBadge">
+                <div class="badgeRow">
+                  <div></div>
+                  <div class="verseCircle">
+                    <div class="top">VERSE</div>
+                    <div class="num" id="verseNumLand">—</div>
+                  </div>
+                  <div class="infoOrb" id="infoOrbLand" title="More information">
+                    <div class="i">i</div>
+                  </div>
+                </div>
+                <div class="surahName" id="surahLand">SURAH</div>
+              </div>
+
+              <div class="infoFull" id="infoFullLand" aria-hidden="true">
+                <div class="panel">
+                  <div class="topbar">
+                    <div class="close" id="infoCloseLand" title="Close">✕</div>
+                  </div>
+                  <div class="content">
+                    <div class="media" id="infoMediaBoxLand"></div>
+                    <div class="text" id="infoTextBoxLand"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="stage">
+            <div class="screen portrait" id="screenPort" style="--bgBright:0.55">
+              <div class="fallbackBg"></div>
+              <video class="bgVideo" id="bgPort" muted loop playsinline></video>
+              <div class="vignette"></div>
+
+              <div class="screenToggles">
+                <button class="togBtn on" id="btnArabicPort">Arabic</button>
+                <button class="togBtn on" id="btnBgPort">Background</button>
+              </div>
+
+              <div class="centerTextArea">
+                <div class="stack">
+                  <div class="ar" id="arPort">اكتب العربية…</div>
+                  <div class="en" id="enPort">Type English…</div>
+                </div>
+              </div>
+
+              <div class="bottomBadge">
+                <div class="badgeRow">
+                  <div></div>
+                  <div class="verseCircle">
+                    <div class="top">VERSE</div>
+                    <div class="num" id="verseNumPort">—</div>
+                  </div>
+                  <div class="infoOrb" id="infoOrbPort" title="More information">
+                    <div class="i">i</div>
+                  </div>
+                </div>
+                <div class="surahName" id="surahPort">SURAH</div>
+              </div>
+
+              <div class="infoFull" id="infoFullPort" aria-hidden="true">
+                <div class="panel">
+                  <div class="topbar">
+                    <div class="close" id="infoClosePort" title="Close">✕</div>
+                  </div>
+                  <div class="content">
+                    <div class="media" id="infoMediaBoxPort"></div>
+                    <div class="text" id="infoTextBoxPort"></div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width:34px"></th>
+              <th style="width:110px">ID</th>
+              <th style="width:90px">Verse</th>
+              <th style="width:160px">Start → End</th>
+              <th>Texts + Video + Info</th>
+              <th style="width:200px">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+
+        <div class="small" style="margin-top:10px">
+          The “Info” action button only appears when a verse has info.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="jsonFile" accept="application/json" style="display:none"/>
+
+<script>
+  // ---------- Elements ----------
+  const audio = document.getElementById('audio');
+  const audioUrl = document.getElementById('audioUrl');
+  const btnLoadAudioUrl = document.getElementById('btnLoadAudioUrl');
+  const jsonFile = document.getElementById('jsonFile');
+
+  // NEW
+  const btnExportBat = document.getElementById('btnExportBat');
+  const ffmpegBin = document.getElementById('ffmpegBin');
+  const chunksFolder = document.getElementById('chunksFolder');
+  const chunkFormat = document.getElementById('chunkFormat');
+  const chunkBitrate = document.getElementById('chunkBitrate');
+
+  const tNow = document.getElementById('tNow');
+  const tDur = document.getElementById('tDur');
+  const fill = document.getElementById('fill');
+  const timeHint = document.getElementById('timeHint');
+
+  const metaSurah = document.getElementById('metaSurah');
+  const metaReciter = document.getElementById('metaReciter');
+
+  const modeBanner = document.getElementById('modeBanner');
+  const modeTitle = document.getElementById('modeTitle');
+  const modeSub = document.getElementById('modeSub');
+  const dirtyBadge = document.getElementById('dirtyBadge');
+  const btnSaveEdit = document.getElementById('btnSaveEdit');
+  const btnCancelEdit = document.getElementById('btnCancelEdit');
+
+  const ayahNum = document.getElementById('ayahNum');
+  const ayahPart = document.getElementById('ayahPart');
+  const segId = document.getElementById('segId');
+  const segStart = document.getElementById('segStart');
+  const segEnd = document.getElementById('segEnd');
+
+  const bgVideoUrl = document.getElementById('bgVideoUrl');
+  const bgBrightness = document.getElementById('bgBrightness');
+
+  const textAr = document.getElementById('textAr');
+  const textEnOrig = document.getElementById('textEnOrig');
+  const textEnLand = document.getElementById('textEnLand');
+  const textEnPort = document.getElementById('textEnPort');
+
+  const statusPill = document.getElementById('statusPill');
+  const countPill = document.getElementById('countPill');
+  const rangePill = document.getElementById('rangePill');
+
+  const btnUndo = document.getElementById('btnUndo');
+  const btnMarkStart = document.getElementById('btnMarkStart');
+  const btnMarkEnd = document.getElementById('btnMarkEnd');
+  const btnClearTimes = document.getElementById('btnClearTimes');
+
+  const btnAdd = document.getElementById('btnAdd');
+  const btnClearAll = document.getElementById('btnClearAll');
+
+  const btnExportJson = document.getElementById('btnExportJson');
+  const btnImportJson = document.getElementById('btnImportJson');
+  const btnSort = document.getElementById('btnSort');
+  const btnDeleteSelected = document.getElementById('btnDeleteSelected');
+
+  const btnPreview = document.getElementById('btnPreview');
+  const tbody = document.getElementById('tbody');
+
+  // More info editor
+  const btnMoreInfoToggle = document.getElementById('btnMoreInfoToggle');
+  const moreBox = document.getElementById('moreBox');
+  const moreStatus = document.getElementById('moreStatus');
+  const btnClearInfo = document.getElementById('btnClearInfo');
+  const infoMedia = document.getElementById('infoMedia');
+  const infoText = document.getElementById('infoText');
+
+  // Preview nodes
+  const enLand = document.getElementById('enLand');
+  const enPort = document.getElementById('enPort');
+  const arLand = document.getElementById('arLand');
+  const arPort = document.getElementById('arPort');
+
+  const verseNumLand = document.getElementById('verseNumLand');
+  const verseNumPort = document.getElementById('verseNumPort');
+  const surahLand = document.getElementById('surahLand');
+  const surahPort = document.getElementById('surahPort');
+
+  const landFont = document.getElementById('landFont');
+  const portFont = document.getElementById('portFont');
+  const btnDefaultFonts = document.getElementById('btnDefaultFonts');
+
+  const previewFromVerse = document.getElementById('previewFromVerse');
+  const btnPlayPreview = document.getElementById('btnPlayPreview');
+  const btnStopPreview = document.getElementById('btnStopPreview');
+  const previewScrub = document.getElementById('previewScrub');
+  const previewTime = document.getElementById('previewTime');
+
+  // Background videos in preview
+  const screenLand = document.getElementById('screenLand');
+  const screenPort = document.getElementById('screenPort');
+  const bgLand = document.getElementById('bgLand');
+  const bgPort = document.getElementById('bgPort');
+
+  // Screen toggles
+  const btnArabicLand = document.getElementById('btnArabicLand');
+  const btnArabicPort = document.getElementById('btnArabicPort');
+  const btnBgLand = document.getElementById('btnBgLand');
+  const btnBgPort = document.getElementById('btnBgPort');
+
+  // Info orbs + fullscreen panels
+  const infoOrbLand = document.getElementById('infoOrbLand');
+  const infoOrbPort = document.getElementById('infoOrbPort');
+
+  const infoFullLand = document.getElementById('infoFullLand');
+  const infoFullPort = document.getElementById('infoFullPort');
+
+  const infoMediaBoxLand = document.getElementById('infoMediaBoxLand');
+  const infoTextBoxLand = document.getElementById('infoTextBoxLand');
+
+  const infoMediaBoxPort = document.getElementById('infoMediaBoxPort');
+  const infoTextBoxPort = document.getElementById('infoTextBoxPort');
+
+  const infoCloseLand = document.getElementById('infoCloseLand');
+  const infoClosePort = document.getElementById('infoClosePort');
+
+  // ---------- State ----------
+  let segments = [];
+  let selected = new Set();
+
+  let editingId = null;
+  let editDirty = false;
+
+  // Defaults: BOTH ON
+  let showArabic = true;
+  let showBackground = true;
+
+  let previewRunning = false;
+  let previewRaf = null;
+  let previewStartTime = 0;
+  let previewEndTime = 0;
+
+  // Info panel state
+  let infoOpen = false;
+
+  // Undo stack
+  let undoStack = [];
+  const UNDO_LIMIT = 30;
+
+  // ---------- Helpers ----------
+  function fmtTime(sec){
+    if (!isFinite(sec)) return "00:00.000";
+    const m = Math.floor(sec / 60);
+    const s = sec - m*60;
+    const mm = String(m).padStart(2,'0');
+    const ss = String(Math.floor(s)).padStart(2,'0');
+    const ms = String(Math.floor((s - Math.floor(s))*1000)).padStart(3,'0');
+    return `${mm}:${ss}.${ms}`;
+  }
+  function fmtSec(sec){ return (Math.round(sec*1000)/1000).toFixed(3); }
+  function currentSec(){ return audio.currentTime || 0; }
+  function durationSec(){ return audio.duration || 0; }
+  function n(v){ return Number(v); }
+  function clamp(x,a,b){ return Math.max(a, Math.min(b, x)); }
+  function escapeHtml(str){
+    return String(str ?? "").replace(/[&<>"']/g, (m)=>( {
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[m]));
+  }
+
+  // NEW: path/name helpers for audio chunking
+  function normalizeSlashes(p){ return String(p || "").replace(/\\/g, "/"); }
+  function ensureTrailingSlash(p){
+    const s = normalizeSlashes(p || "").trim();
+    if (!s) return "";
+    return s.endsWith("/") ? s : (s + "/");
+  }
+  function getBaseAudioName(audioPath){
+    // "audios/C12_R1.mp3" -> "C12_R1"
+    const u = normalizeSlashes(audioPath).trim();
+    const file = (u.split("/").pop() || "").trim();
+    const base = file.replace(/\.[a-z0-9]+$/i, "");
+    return base || "audio";
+  }
+  function getChunkExt(){
+    const ext = String(chunkFormat.value || "m4a").trim().replace(".", "");
+    return ext || "m4a";
+  }
+  function getChunkOutFolder(){
+    // if user left blank, auto compute: "audios/<base>/"
+    const src = (audioUrl.value || "").trim();
+    const base = getBaseAudioName(src);
+    const f = ensureTrailingSlash(chunksFolder.value);
+    if (f) return f;
+    const auto = `audios/${base}/`;
+    chunksFolder.value = auto;
+    return auto;
+  }
+  function chunkFileNameFor(ayah, part){
+    // Must keep base initials: C12_R1_1_1.m4a
+    const src = (audioUrl.value || "").trim();
+    const base = getBaseAudioName(src);
+    const ext = getChunkExt();
+    return `${base}_${Number(ayah)}_${Number(part)}.${ext}`;
+  }
+  function chunkUrlForSegment(seg){
+    const folder = getChunkOutFolder();
+    return normalizeSlashes(folder + chunkFileNameFor(seg.ayah, seg.part));
+  }
+
+  function downloadText(filename, text){
+    const blob = new Blob([text], {type:"text/plain;charset=utf-8"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+  }
+
+  function pushUndo(label){
+    const snap = {
+      label,
+      segmentsJson: JSON.stringify(segments),
+      metaJson: JSON.stringify({
+        surah: metaSurah.value,
+        reciter: metaReciter.value,
+        audio_url: audioUrl.value,
+        landFont: landFont.value,
+        portFont: portFont.value,
+        showArabic,
+        showBackground,
+
+        // NEW
+        ffmpegBin: ffmpegBin.value,
+        chunksFolder: chunksFolder.value,
+        chunkFormat: chunkFormat.value,
+        chunkBitrate: chunkBitrate.value
+      }),
+      selectedJson: JSON.stringify(Array.from(selected))
+    };
+    undoStack.push(snap);
+    if (undoStack.length > UNDO_LIMIT) undoStack.shift();
+    btnUndo.disabled = undoStack.length === 0;
+  }
+  function doUndo(){
+    const snap = undoStack.pop();
+    if (!snap) return;
+    try{
+      segments = JSON.parse(snap.segmentsJson) || [];
+      const m = JSON.parse(snap.metaJson) || {};
+      metaSurah.value = m.surah || metaSurah.value;
+      metaReciter.value = m.reciter || metaReciter.value;
+      audioUrl.value = m.audio_url || audioUrl.value;
+      landFont.value = m.landFont || landFont.value;
+      portFont.value = m.portFont || portFont.value;
+
+      showArabic = (m.showArabic !== undefined) ? !!m.showArabic : showArabic;
+      showBackground = (m.showBackground !== undefined) ? !!m.showBackground : showBackground;
+
+      // NEW restore
+      ffmpegBin.value = m.ffmpegBin ?? ffmpegBin.value;
+      chunksFolder.value = m.chunksFolder ?? chunksFolder.value;
+      chunkFormat.value = m.chunkFormat ?? chunkFormat.value;
+      chunkBitrate.value = m.chunkBitrate ?? chunkBitrate.value;
+
+      selected = new Set(JSON.parse(snap.selectedJson || "[]"));
+      statusPill.textContent = `Undone: ${snap.label}`;
+      hideInfoPanel(true);
+      renderTable();
+      updatePreview();
+      enforceFormRules();
+    }catch(e){
+      statusPill.textContent = "Undo failed (corrupt snapshot).";
+    }
+    btnUndo.disabled = undoStack.length === 0;
+  }
+
+  function updateTransport(){
+    const now = currentSec();
+    const dur = durationSec();
+    tNow.textContent = fmtTime(now);
+    tDur.textContent = fmtTime(dur);
+    fill.style.width = dur ? `${(now/dur)*100}%` : '0%';
+    timeHint.textContent = `start=${segStart.value || "—"} end=${segEnd.value || "—"}`;
+  }
+
+  function recomputeId(){
+    const a = n(ayahNum.value);
+    const p = n(ayahPart.value) || 1;
+    segId.value = (!a) ? "" : `${a}:${p}`;
+  }
+
+  function seekBy(delta){
+    const t = clamp(currentSec() + delta, 0, durationSec() || 1e9);
+    audio.currentTime = t;
+    updateTransport();
+  }
+
+  function markStart(){
+    segStart.value = fmtSec(currentSec());
+    updateTransport();
+    updatePreview();
+    if (editingId) markEditDirty();
+    enforceFormRules();
+  }
+  function markEnd(){
+    segEnd.value = fmtSec(currentSec());
+    updateTransport();
+    updatePreview();
+    if (editingId) markEditDirty();
+    enforceFormRules();
+  }
+
+  function setPreviewVideo(url){
+    const u = (url || "").trim();
+    if (!u){
+      bgLand.removeAttribute("src");
+      bgPort.removeAttribute("src");
+      bgLand.load(); bgPort.load();
+      return;
+    }
+    if (bgLand.getAttribute("src") !== u){
+      bgLand.src = u;
+      bgPort.src = u;
+      bgLand.load(); bgPort.load();
+      bgLand.play().catch(()=>{});
+      bgPort.play().catch(()=>{});
+    }
+  }
+
+  function applyBrightness(val){
+    const b = clamp(Number(val || 0.55), 0.2, 1.0);
+    bgBrightness.value = b.toFixed(2);
+    screenLand.style.setProperty("--bgBright", b);
+    screenPort.style.setProperty("--bgBright", b);
+  }
+
+  function forceSyncFromOrig(){
+    const orig = textEnOrig.value || "";
+    textEnLand.value = orig;
+    textEnPort.value = orig;
+    updatePreview();
+    if (editingId) markEditDirty();
+    enforceFormRules();
+  }
+
+  function hasInfoOnForm(){
+    const t = (infoText.value || "").trim();
+    const m = (infoMedia.value || "").trim();
+    return !!(t || m);
+  }
+
+  function segmentHasInfo(seg){
+    return !!(seg && seg.info && ((seg.info.text && seg.info.text.trim()) || (seg.info.media && seg.info.media.trim())));
+  }
+
+  function updateMoreStatus(){
+    const ok = hasInfoOnForm();
+    moreStatus.textContent = ok ? "Info: READY" : "No info yet";
+    moreStatus.style.color = ok ? "rgba(255,255,255,.92)" : "rgba(169,176,189,.95)";
+    moreStatus.style.borderColor = ok ? "rgba(255,255,255,.25)" : "rgba(255,255,255,.10)";
+  }
+
+  function setMoreBoxOpen(open){
+    moreBox.style.display = open ? "block" : "none";
+  }
+
+  function validateSegmentForSave(){
+    const st = n(segStart.value);
+    const en = n(segEnd.value);
+
+    const ar = (textAr.value || "").trim();
+    const orig = (textEnOrig.value || "").trim();
+    const land = (textEnLand.value || "").trim();
+    const port = (textEnPort.value || "").trim();
+
+    const vid = (bgVideoUrl.value || "").trim();
+    const bright = clamp(Number(bgBrightness.value || 0.55), 0.2, 1.0);
+
+    if (!audio.src) return {ok:false, msg:"Load audio first."};
+    if (!isFinite(st) || !isFinite(en)) return {ok:false, msg:"Mark Start and End."};
+    if (en <= st) return {ok:false, msg:"End must be after Start."};
+
+    if (!metaSurah.value.trim()) return {ok:false, msg:"Fill Surah name."};
+    if (!ar) return {ok:false, msg:"Fill Arabic text."};
+    if (!orig) return {ok:false, msg:"Fill Original English text."};
+    if (!land) return {ok:false, msg:"Landscape English is empty."};
+    if (!port) return {ok:false, msg:"Portrait English is empty."};
+    if (!vid) return {ok:false, msg:"Fill Background video URL."};
+
+    const a = n(ayahNum.value);
+    const p = n(ayahPart.value) || 1;
+    if (!a || a < 1) return {ok:false, msg:"Fill Verse #."};
+    if (!p || p < 1) return {ok:false, msg:"Fill Part (>=1)."};
+    const newId = `${a}:${p}`;
+
+    const fonts = { land: Number(landFont.value || 45), port: Number(portFont.value || 35) };
+    const video = { url: vid, brightness: bright };
+
+    const info = (hasInfoOnForm())
+      ? {
+          text: (infoText.value || "").trim() || undefined,
+          media: (infoMedia.value || "").trim() || undefined
+        }
+      : undefined;
+
+    // NEW: audio timestamps + per-segment audio url
+    const audio_start = st;
+    const audio_end = en;
+    const audioObj = { url: chunkUrlForSegment({ayah:a, part:p}) };
+
+    return {
+      ok:true,
+      id:newId,
+      seg:{
+        id:newId,
+        type:"ayah",
+        ayah:a,
+        part:p,
+        start:st,
+        end:en,
+
+        // NEW fields
+        audio_start,
+        audio_end,
+        audio: audioObj,
+
+        text_ar: ar,
+        en_orig: orig,
+        en_land: land,
+        en_port: port,
+        fonts,
+        video,
+        info
+      }
+    };
+  }
+
+  function enforceFormRules(){
+    btnAdd.disabled = editingId ? true : !validateSegmentForSave().ok;
+    if (editingId){
+      const valid = validateSegmentForSave().ok;
+      btnSaveEdit.disabled = !(editDirty && valid);
+    }
+  }
+
+  // ---------- Screen Toggles (Arabic + Background) ----------
+  function setArabicUI(){
+    btnArabicLand.classList.toggle("on", showArabic);
+    btnArabicPort.classList.toggle("on", showArabic);
+    arLand.classList.toggle("hidden", !showArabic);
+    arPort.classList.toggle("hidden", !showArabic);
+  }
+  function setBackgroundUI(){
+    btnBgLand.classList.toggle("on", showBackground);
+    btnBgPort.classList.toggle("on", showBackground);
+    bgLand.classList.toggle("hiddenBg", !showBackground);
+    bgPort.classList.toggle("hiddenBg", !showBackground);
+  }
+  function toggleArabic(){
+    showArabic = !showArabic;
+    setArabicUI();
+  }
+  function toggleBackground(){
+    showBackground = !showBackground;
+    setBackgroundUI();
+  }
+
+  // ---------- Fullscreen info media rendering ----------
+  function isYouTubeUrl(u){
+    const s = (u || "").trim();
+    return /youtu\.be\/|youtube\.com\/watch\?v=|youtube\.com\/embed\//i.test(s);
+  }
+  function toYouTubeEmbed(u){
+    const s = (u || "").trim();
+    if (!s) return "";
+    if (/youtube\.com\/embed\//i.test(s)) return s;
+    let id = "";
+    const m1 = s.match(/v=([a-zA-Z0-9_-]+)/);
+    const m2 = s.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);
+    if (m1) id = m1[1];
+    if (m2) id = m2[1];
+    return id ? `https://www.youtube.com/embed/${id}` : s;
+  }
+  function isImageUrl(u){ return /\.(png|jpg|jpeg|webp|gif)$/i.test((u||"").trim()); }
+  function isVideoUrl(u){ return /\.(mp4|webm|ogg)$/i.test((u||"").trim()); }
+
+  function renderMediaInto(boxEl, mediaUrl){
+    boxEl.innerHTML = "";
+    const media = (mediaUrl || "").trim();
+    if (!media) return;
+    if (isYouTubeUrl(media)){
+      const iframe = document.createElement("iframe");
+      iframe.src = toYouTubeEmbed(media);
+      iframe.setAttribute("allowfullscreen", "true");
+      iframe.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture");
+      boxEl.appendChild(iframe);
+      return;
+    }
+    if (isImageUrl(media)){
+      const img = document.createElement("img");
+      img.src = media;
+      img.alt = "linked media";
+      boxEl.appendChild(img);
+      return;
+    }
+    if (isVideoUrl(media)){
+      const v = document.createElement("video");
+      v.src = media;
+      v.controls = true;
+      v.playsInline = true;
+      boxEl.appendChild(v);
+      return;
+    }
+    const iframe = document.createElement("iframe");
+    iframe.src = media;
+    boxEl.appendChild(iframe);
+  }
+
+  function showInfoPanelForSegment(seg){
+    if (!segmentHasInfo(seg)) return;
+
+    const txt = (seg.info?.text || "").trim();
+    const media = (seg.info?.media || "").trim();
+
+    if (media){
+      infoMediaBoxLand.style.display = "flex";
+      renderMediaInto(infoMediaBoxLand, media);
+    } else {
+      infoMediaBoxLand.style.display = "none";
+      infoMediaBoxLand.innerHTML = "";
+    }
+    infoTextBoxLand.textContent = txt || "No text.";
+    infoTextBoxLand.classList.toggle("empty", !txt);
+
+    if (media){
+      infoMediaBoxPort.style.display = "flex";
+      renderMediaInto(infoMediaBoxPort, media);
+    } else {
+      infoMediaBoxPort.style.display = "none";
+      infoMediaBoxPort.innerHTML = "";
+    }
+    infoTextBoxPort.textContent = txt || "No text.";
+    infoTextBoxPort.classList.toggle("empty", !txt);
+
+    infoFullLand.style.display = "block";
+    infoFullPort.style.display = "block";
+    infoFullLand.setAttribute("aria-hidden", "false");
+    infoFullPort.setAttribute("aria-hidden", "false");
+    infoOpen = true;
+
+    infoOrbLand.style.display = "none";
+    infoOrbPort.style.display = "none";
+  }
+
+  function hideInfoPanel(silent=false){
+    infoFullLand.style.display = "none";
+    infoFullPort.style.display = "none";
+    infoFullLand.setAttribute("aria-hidden", "true");
+    infoFullPort.setAttribute("aria-hidden", "true");
+    infoOpen = false;
+
+    const v = validateSegmentForSave();
+    const shouldShow = v.ok && segmentHasInfo(v.seg);
+    infoOrbLand.style.display = shouldShow ? "flex" : "none";
+    infoOrbPort.style.display = shouldShow ? "flex" : "none";
+
+    if (!silent) statusPill.textContent = "Info closed.";
+  }
+
+  function toggleInfoFromCurrentForm(){
+    if (infoOpen){
+      hideInfoPanel(true);
+      return;
+    }
+    const v = validateSegmentForSave();
+    if (!v.ok){
+      statusPill.textContent = "Fill verse/time + required fields first.";
+      return;
+    }
+    if (!segmentHasInfo(v.seg)){
+      statusPill.textContent = "No information entered for this verse.";
+      return;
+    }
+    showInfoPanelForSegment(v.seg);
+  }
+
+  function setInfoOrbsVisible(visible){
+    if (infoOpen){
+      infoOrbLand.style.display = "none";
+      infoOrbPort.style.display = "none";
+      return;
+    }
+    infoOrbLand.style.display = visible ? "flex" : "none";
+    infoOrbPort.style.display = visible ? "flex" : "none";
+  }
+
+  // ---------- Preview updates ----------
+  function updatePreview(){
+    const sur = (metaSurah.value || "SURAH").trim();
+    surahLand.textContent = sur;
+    surahPort.textContent = sur;
+
+    const verse = ayahNum.value ? String(Number(ayahNum.value)) : "—";
+    verseNumLand.textContent = verse;
+    verseNumPort.textContent = verse;
+
+    enLand.textContent = (textEnLand.value || "").trim() || "Type English…";
+    enPort.textContent = (textEnPort.value || "").trim() || "Type English…";
+
+    const ar = (textAr.value || "").trim() || "اكتب العربية…";
+    arLand.textContent = ar;
+    arPort.textContent = ar;
+
+    setArabicUI();
+
+    const lf = clamp(Number(landFont.value || 45), 10, 200);
+    const pf = clamp(Number(portFont.value || 35), 10, 200);
+    landFont.value = lf;
+    portFont.value = pf;
+
+    enLand.style.fontSize = lf + "px";
+    enPort.style.fontSize = pf + "px";
+    arLand.style.fontSize = Math.max(14, Math.round(lf * 0.82)) + "px";
+    arPort.style.fontSize = Math.max(14, Math.round(pf * 0.82)) + "px";
+
+    setPreviewVideo(bgVideoUrl.value);
+    applyBrightness(bgBrightness.value);
+
+    setBackgroundUI();
+
+    updateMoreStatus();
+
+    const v = validateSegmentForSave();
+    const hasInfo = (v.ok && segmentHasInfo(v.seg));
+    setInfoOrbsVisible(hasInfo);
+
+    if (infoOpen && v.ok && segmentHasInfo(v.seg)){
+      showInfoPanelForSegment(v.seg);
+    }
+    if (infoOpen && (!v.ok || !segmentHasInfo(v.seg))){
+      hideInfoPanel(true);
+    }
+  }
+
+  // ---------- Edit mode ----------
+  function setEditUI(on){
+    modeBanner.classList.toggle("editing", on);
+    btnCancelEdit.disabled = !on;
+    if (!on){
+      dirtyBadge.style.display = "none";
+      editDirty = false;
+      btnSaveEdit.disabled = true;
+      clearFieldHighlights();
+    }
+  }
+  function setDirtyUI(dirty){
+    editDirty = dirty;
+    dirtyBadge.style.display = dirty ? "inline-flex" : "none";
+    btnSaveEdit.disabled = true;
+    btnCancelEdit.disabled = false;
+  }
+  function clearFieldHighlights(){
+    const fields = [
+      ayahNum, ayahPart, segStart, segEnd, bgVideoUrl, bgBrightness,
+      textAr, textEnOrig, textEnLand, textEnPort, landFont, portFont,
+      metaSurah, metaReciter, audioUrl, infoMedia, infoText,
+      ffmpegBin, chunksFolder, chunkFormat, chunkBitrate
+    ];
+    fields.forEach(f => f.classList.remove("fieldEdited"));
+  }
+  function markEditDirty(){
+    if (!editingId) return;
+    setDirtyUI(true);
+    enforceFormRules();
+  }
+
+  function loadInfoToForm(info){
+    infoText.value  = info?.text ?? "";
+    infoMedia.value = info?.media ?? "";
+    updateMoreStatus();
+    setMoreBoxOpen(!!(infoText.value || infoMedia.value));
+  }
+
+  function loadSegmentToForm(seg){
+    ayahNum.value = seg.ayah ?? "";
+    ayahPart.value = seg.part ?? 1;
+    segId.value = seg.id;
+
+    segStart.value = fmtSec(seg.start);
+    segEnd.value = fmtSec(seg.end);
+    updateTransport();
+
+    bgVideoUrl.value = seg.video?.url || "";
+    bgBrightness.value = (seg.video?.brightness ?? 0.55).toFixed(2);
+
+    textAr.value = seg.text_ar || "";
+    textEnOrig.value = seg.en_orig || "";
+    textEnLand.value = seg.en_land || seg.en_orig || "";
+    textEnPort.value = seg.en_port || seg.en_orig || "";
+
+    landFont.value = seg.fonts?.land ?? landFont.value;
+    portFont.value = seg.fonts?.port ?? portFont.value;
+
+    loadInfoToForm(seg.info);
+
+    hideInfoPanel(true);
+    updatePreview();
+    recomputeId();
+  }
+
+  function enterEditMode(id){
+    if (editingId) return;
+    const seg = segments.find(s=>s.id===id);
+    if (!seg) return;
+
+    editingId = id;
+    setEditUI(true);
+
+    modeTitle.textContent = `EDIT MODE — ${id}`;
+    modeSub.textContent = "You can change Verse/Part (ID). Save applies the new ID.";
+    statusPill.textContent = `Editing ${id}`;
+
+    loadSegmentToForm(seg);
+
+    setDirtyUI(false);
+    renderTable();
+    enforceFormRules();
+  }
+
+  function exitEditMode(){
+    editingId = null;
+    setEditUI(false);
+    modeTitle.textContent = "Not editing";
+    modeSub.textContent = "Click “Edit” on a verse to modify it.";
+    statusPill.textContent = "Not editing";
+    renderTable();
+    enforceFormRules();
+    updatePreview();
+  }
+
+  function saveEdit(){
+    if (!editingId) return;
+    const v = validateSegmentForSave();
+    if (!v.ok){ statusPill.textContent = v.msg; return; }
+
+    pushUndo(`Save edit (${editingId} → ${v.id})`);
+
+    const newId = v.id;
+    segments = segments.filter(s => s.id !== editingId);
+    segments = segments.filter(s => s.id !== newId);
+    segments.push(v.seg);
+
+    statusPill.textContent = `Saved: ${editingId} → ${newId}`;
+    renderTable();
+    exitEditMode();
+  }
+
+  function cancelEdit(){
+    if (!editingId) return;
+    statusPill.textContent = "Edit cancelled.";
+    exitEditMode();
+  }
+
+  // ---------- Table ----------
+  function getSortedSegments(){ return segments.slice().sort((a,b)=>a.start-b.start); }
+
+  function renderTable(){
+    const sorted = getSortedSegments();
+    tbody.innerHTML = "";
+
+    countPill.textContent = `${segments.length} verse${segments.length===1?"":"s"}`;
+    if (segments.length){
+      const minT = Math.min(...segments.map(s=>s.start));
+      const maxT = Math.max(...segments.map(s=>s.end));
+      rangePill.textContent = `range: ${fmtTime(minT)} → ${fmtTime(maxT)}`;
+    } else {
+      rangePill.textContent = "range: —";
+    }
+
+    btnDeleteSelected.disabled = selected.size === 0;
+
+    for (const s of sorted){
+      const tr = document.createElement('tr');
+
+      const tdSel = document.createElement('td');
+      const cb = document.createElement('input');
+      cb.type = "checkbox";
+      cb.checked = selected.has(s.id);
+      cb.addEventListener('change', () => {
+        if (cb.checked) selected.add(s.id);
+        else selected.delete(s.id);
+        btnDeleteSelected.disabled = selected.size === 0;
+      });
+      tdSel.appendChild(cb);
+
+      const tdId = document.createElement('td'); tdId.className="mono"; tdId.textContent = s.id;
+      const tdAy = document.createElement('td'); tdAy.className="mono"; tdAy.textContent = `#${s.ayah} p${s.part}`;
+
+      const tdT = document.createElement('td'); tdT.className="mono";
+      tdT.textContent = `${s.start.toFixed(3)} → ${s.end.toFixed(3)}`;
+
+      const tdTx = document.createElement('td');
+      const hasInfo = segmentHasInfo(s);
+
+      const chunk = s.audio?.url ? s.audio.url : chunkUrlForSegment(s);
+      const aStart = (s.audio_start != null) ? Number(s.audio_start).toFixed(3) : s.start.toFixed(3);
+      const aEnd   = (s.audio_end   != null) ? Number(s.audio_end).toFixed(3) : s.end.toFixed(3);
+
+      tdTx.innerHTML =
+        `<div><b>Video</b>: ${escapeHtml(s.video?.url || "")} <span class="mono" style="opacity:.7">bright=${(s.video?.brightness ?? 0.55).toFixed(2)}</span></div>` +
+        `<div style="margin-top:6px"><b>AR</b>: ${escapeHtml(s.text_ar || "")}</div>` +
+        `<div style="margin-top:6px"><b>ORIG</b>: ${escapeHtml(s.en_orig || "")}</div>` +
+        `<div style="margin-top:6px"><b>LAND</b> (${s.fonts?.land ?? "—"}px): ${escapeHtml(s.en_land || "")}</div>` +
+        `<div style="margin-top:6px"><b>PORT</b> (${s.fonts?.port ?? "—"}px): ${escapeHtml(s.en_port || "")}</div>` +
+        `<div style="margin-top:8px"><b>AUDIO</b>: <span class="mono" style="opacity:.9">${escapeHtml(chunk)}</span></div>` +
+        `<div style="margin-top:6px"><b>AUDIO TS</b>: <span class="mono" style="opacity:.85">${aStart} → ${aEnd}</span></div>` +
+        `<div style="margin-top:8px"><b>INFO</b>: ${hasInfo ? "<span class='mono' style='color:rgba(255,255,255,.92)'>YES</span>" : "<span class='mono' style='opacity:.7'>no</span>"}`
+        + (hasInfo ? ` <span class="mono" style="opacity:.75">(${escapeHtml(s.info?.media || "text only")})</span>` : "")
+        + `</div>`;
+
+      const tdAct = document.createElement('td');
+
+      const bEdit = document.createElement('button');
+      bEdit.className = (editingId === s.id) ? "btn warn" : "btn";
+      bEdit.textContent = (editingId === s.id) ? "Editing…" : "Edit";
+      bEdit.disabled = (editingId && editingId !== s.id);
+      bEdit.addEventListener('click', () => enterEditMode(s.id));
+
+      const bJump = document.createElement('button');
+      bJump.className="btn";
+      bJump.textContent="Jump";
+      bJump.style.marginLeft="8px";
+      bJump.addEventListener('click', () => {
+        audio.currentTime = s.start;
+        audio.play().catch(()=>{});
+      });
+
+      tdAct.appendChild(bEdit);
+      tdAct.appendChild(bJump);
+
+      if (hasInfo){
+        const bInfo = document.createElement('button');
+        bInfo.className="btn";
+        bInfo.textContent="Info";
+        bInfo.style.marginLeft="8px";
+        bInfo.addEventListener('click', () => {
+          loadSegmentToForm(s);
+          showInfoPanelForSegment(s);
+        });
+        tdAct.appendChild(bInfo);
+      }
+
+      tr.appendChild(tdSel);
+      tr.appendChild(tdId);
+      tr.appendChild(tdAy);
+      tr.appendChild(tdT);
+      tr.appendChild(tdTx);
+      tr.appendChild(tdAct);
+      tbody.appendChild(tr);
+    }
+  }
+
+  // ---------- Preview playback ----------
+  function findSegmentAtTime(t, sorted){
+    for (let i=0;i<sorted.length;i++){
+      const s = sorted[i];
+      if (t >= s.start && t < s.end) return s;
+    }
+    return null;
+  }
+
+  function stopPreview(){
+    previewRunning = false;
+    cancelAnimationFrame(previewRaf);
+    previewRaf = null;
+    try{ audio.pause(); }catch(e){}
+    try{ bgLand.pause(); bgPort.pause(); }catch(e){}
+    statusPill.textContent = "Preview stopped.";
+  }
+
+  function previewTick(){
+    if (!previewRunning) return;
+
+    const sorted = getSortedSegments();
+    const t = audio.currentTime;
+
+    previewTime.textContent = fmtTime(t);
+
+    const denom = (previewEndTime - previewStartTime) || 1;
+    const u = (t - previewStartTime) / denom;
+    previewScrub.value = Math.round(clamp(u,0,1) * 1000);
+
+    const seg = findSegmentAtTime(t, sorted);
+    if (seg && !editingId){
+      loadSegmentToForm(seg);
+      bgLand.play().catch(()=>{});
+      bgPort.play().catch(()=>{});
+    }
+
+    if (t >= previewEndTime || audio.ended){
+      stopPreview();
+      return;
+    }
+    previewRaf = requestAnimationFrame(previewTick);
+  }
+
+  function startPreview(fromTime){
+    const sorted = getSortedSegments();
+    if (!sorted.length){
+      statusPill.textContent = "No verses to preview.";
+      return;
+    }
+    previewStartTime = fromTime ?? sorted[0].start;
+    previewEndTime = sorted[sorted.length-1].end;
+    previewStartTime = clamp(previewStartTime, sorted[0].start, previewEndTime);
+
+    previewRunning = true;
+    statusPill.textContent = "Preview running… (audio + bg video)";
+    hideInfoPanel(true);
+
+    audio.currentTime = previewStartTime;
+    audio.play().catch(()=>{});
+    bgLand.play().catch(()=>{});
+    bgPort.play().catch(()=>{});
+
+    cancelAnimationFrame(previewRaf);
+    previewRaf = requestAnimationFrame(previewTick);
+  }
+
+  function findStartTimeByVerse(v){
+    const sorted = getSortedSegments();
+    if (!sorted.length) return null;
+    const verse = Number(v);
+    if (!verse || verse < 1) return sorted[0].start;
+    const hit = sorted.find(s => Number(s.ayah) === verse);
+    return hit ? hit.start : sorted[0].start;
+  }
+
+  // ---------- Audio loading ----------
+  function loadAudioFromUrl(){
+    const u = (audioUrl.value || "").trim();
+    if (!u){
+      statusPill.textContent = "Paste an Audio URL first.";
+      return;
+    }
+    audio.src = u;
+    audio.load();
+    statusPill.textContent = `Audio URL loaded`;
+    // auto suggest chunks folder if empty
+    if (!(chunksFolder.value || "").trim()){
+      const base = getBaseAudioName(u);
+      chunksFolder.value = `audios/${base}/`;
+    }
+    enforceFormRules();
+  }
+
+  // NEW: export .bat
+  function exportBat(){
+    if (editingId && editDirty){
+      statusPill.textContent = "Save or Cancel your edit before exporting BAT.";
+      return;
+    }
+
+    const src = (audioUrl.value || "").trim();
+    if (!src){
+      statusPill.textContent = "Set Audio URL first.";
+      return;
+    }
+    const bin = (ffmpegBin.value || "").trim();
+    if (!bin){
+      statusPill.textContent = "Set FFmpeg bin folder first (e.g. C:\\ffmpeg\\bin).";
+      return;
+    }
+
+    const outFolder = getChunkOutFolder(); // also normalizes and auto fills
+    const outFolderWin = normalizeSlashes(outFolder).replace(/\//g, "\\");
+    const srcWin = normalizeSlashes(src).replace(/\//g, "\\");
+    const base = getBaseAudioName(src);
+    const ext = getChunkExt();
+    const br = (chunkBitrate.value || "192k").trim();
+
+    const sorted = getSortedSegments();
+    if (!sorted.length){
+      statusPill.textContent = "No segments to export BAT for.";
+      return;
+    }
+
+    // Build BAT
+    const lines = [];
+    lines.push("@echo off");
+    lines.push("setlocal enabledelayedexpansion");
+    lines.push("");
+    lines.push("REM === Quran Viz Audio Splitter ===");
+    lines.push(`REM Source: ${src}`);
+    lines.push(`REM Output folder: ${outFolder}`);
+    lines.push(`REM Format: ${ext} (AAC) bitrate=${br}`);
+    lines.push("");
+    lines.push(`set FFMPEG="${bin}\\ffmpeg.exe"`);
+    lines.push("if not exist %FFMPEG% (");
+    lines.push("  echo FFmpeg not found: %FFMPEG%");
+    lines.push("  pause");
+    lines.push("  exit /b 1");
+    lines.push(")");
+    lines.push("");
+    lines.push(`set SRC="${srcWin}"`);
+    lines.push("if not exist %SRC% (");
+    lines.push("  echo Source audio not found: %SRC%");
+    lines.push("  echo TIP: Run this BAT from the folder where the relative path exists,");
+    lines.push("  echo or edit SRC to an absolute path.");
+    lines.push("  pause");
+    lines.push("  exit /b 1");
+    lines.push(")");
+    lines.push("");
+    lines.push(`if not exist "${outFolderWin}" mkdir "${outFolderWin}"`);
+    lines.push("");
+
+    sorted.forEach(s => {
+      const aStart = (s.audio_start != null) ? Number(s.audio_start) : Number(s.start);
+      const aEnd   = (s.audio_end   != null) ? Number(s.audio_end)   : Number(s.end);
+      const fn = `${base}_${Number(s.ayah)}_${Number(s.part)}.${ext}`;
+      const outPath = `${outFolderWin}${fn}`.replace(/\\\\+/g, "\\");
+      lines.push(`echo Splitting ${s.id}  (${fmtSec(aStart)} -> ${fmtSec(aEnd)})`);
+      // Accurate cut: place -ss and -to after -i
+      lines.push(`%FFMPEG% -hide_banner -y -i %SRC% -ss ${fmtSec(aStart)} -to ${fmtSec(aEnd)} -c:a aac -b:a ${br} "${outPath}"`);
+      lines.push("");
+    });
+
+    lines.push("echo Done.");
+    lines.push("pause");
+    lines.push("endlocal");
+
+    const name = (metaSurah.value || base || "audio").trim().replace(/\s+/g, "_");
+    downloadText(`${name}_split_audio.bat`, lines.join("\r\n"));
+    statusPill.textContent = "Exported .BAT (downloaded)";
+  }
+
+  // ---------- Events ----------
+  audio.addEventListener('timeupdate', updateTransport);
+  audio.addEventListener('loadedmetadata', updateTransport);
+
+  btnUndo.onclick = doUndo;
+
+  btnMarkStart.onclick = markStart;
+  btnMarkEnd.onclick = markEnd;
+
+  document.getElementById('btnBack').onclick = () => seekBy(-0.5);
+  document.getElementById('btnFwd').onclick = () => seekBy(+0.5);
+  document.getElementById('btnBackBig').onclick = () => seekBy(-2.0);
+  document.getElementById('btnFwdBig').onclick = () => seekBy(+2.0);
+
+  btnClearTimes.onclick = () => {
+    if (editingId){
+      statusPill.textContent = "Finish edit: Save or Cancel.";
+      return;
+    }
+    segStart.value = "";
+    segEnd.value = "";
+    updateTransport();
+    hideInfoPanel(true);
+    updatePreview();
+    enforceFormRules();
+    statusPill.textContent = "Times cleared";
+  };
+
+  btnClearAll.onclick = () => {
+    if (editingId){
+      statusPill.textContent = "Finish edit: Save or Cancel.";
+      return;
+    }
+    ayahNum.value = "";
+    ayahPart.value = "1";
+    segStart.value = "";
+    segEnd.value = "";
+    bgVideoUrl.value = "";
+    bgBrightness.value = "0.55";
+    textAr.value = "";
+    textEnOrig.value = "";
+    textEnLand.value = "";
+    textEnPort.value = "";
+
+    infoMedia.value = "";
+    infoText.value = "";
+    setMoreBoxOpen(false);
+
+    hideInfoPanel(true);
+
+    statusPill.textContent = "Cleared form";
+    recomputeId();
+    updateTransport();
+    updatePreview();
+    enforceFormRules();
+  };
+
+  btnDefaultFonts.onclick = () => {
+    landFont.value = 45;
+    portFont.value = 35;
+    hideInfoPanel(true);
+    updatePreview();
+    if (editingId) markEditDirty();
+    enforceFormRules();
+  };
+
+  btnMoreInfoToggle.onclick = () => {
+    const open = moreBox.style.display !== "block";
+    setMoreBoxOpen(open);
+  };
+
+  btnClearInfo.onclick = () => {
+    infoMedia.value = "";
+    infoText.value = "";
+    updateMoreStatus();
+    hideInfoPanel(true);
+    updatePreview();
+    if (editingId) markEditDirty();
+    enforceFormRules();
+  };
+
+  btnArabicLand.onclick = () => { toggleArabic(); updatePreview(); };
+  btnArabicPort.onclick = () => { toggleArabic(); updatePreview(); };
+  btnBgLand.onclick = () => { toggleBackground(); updatePreview(); };
+  btnBgPort.onclick = () => { toggleBackground(); updatePreview(); };
+
+  infoOrbLand.onclick = (e) => { e.stopPropagation(); toggleInfoFromCurrentForm(); };
+  infoOrbPort.onclick = (e) => { e.stopPropagation(); toggleInfoFromCurrentForm(); };
+
+  infoCloseLand.onclick = (e) => { e.stopPropagation(); hideInfoPanel(true); };
+  infoClosePort.onclick = (e) => { e.stopPropagation(); hideInfoPanel(true); };
+
+  infoFullLand.addEventListener('click', () => hideInfoPanel(true));
+  infoFullPort.addEventListener('click', () => hideInfoPanel(true));
+  infoFullLand.querySelector('.panel').addEventListener('click', (e) => e.stopPropagation());
+  infoFullPort.querySelector('.panel').addEventListener('click', (e) => e.stopPropagation());
+
+  const liveFields = [
+    metaSurah, metaReciter, audioUrl,
+    ayahNum, ayahPart, segStart, segEnd,
+    bgVideoUrl, bgBrightness,
+    textAr, textEnOrig, textEnLand, textEnPort,
+    landFont, portFont,
+    infoMedia, infoText,
+    // NEW
+    ffmpegBin, chunksFolder, chunkFormat, chunkBitrate
+  ];
+  liveFields.forEach(el => {
+    el.addEventListener('input', () => {
+      if (el === textEnOrig) forceSyncFromOrig();
+      else updatePreview();
+
+      if (el === ayahNum || el === ayahPart) recomputeId();
+
+      if (editingId){
+        el.classList.add("fieldEdited");
+        markEditDirty();
+      }
+      enforceFormRules();
+    });
+
+    el.addEventListener('paste', () => {
+      setTimeout(() => {
+        if (el === textEnOrig) forceSyncFromOrig();
+        else updatePreview();
+
+        if (el === ayahNum || el === ayahPart) recomputeId();
+
+        if (editingId){
+          el.classList.add("fieldEdited");
+          markEditDirty();
+        }
+        enforceFormRules();
+      }, 0);
+    });
+  });
+
+  btnAdd.onclick = () => {
+    if (editingId){
+      statusPill.textContent = "You’re in edit mode. Save or Cancel.";
+      return;
+    }
+    const v = validateSegmentForSave();
+    if (!v.ok){ statusPill.textContent = v.msg; return; }
+
+    pushUndo(`Add verse (${v.id})`);
+
+    segments = segments.filter(s => s.id !== v.id);
+    segments.push(v.seg);
+
+    statusPill.textContent = `Added ${v.id}`;
+    hideInfoPanel(true);
+    renderTable();
+
+    ayahPart.value = String((v.seg.part || 1) + 1);
+    recomputeId();
+
+    segStart.value = "";
+    segEnd.value = "";
+    updateTransport();
+
+    updatePreview();
+    enforceFormRules();
+  };
+
+  btnSaveEdit.onclick = saveEdit;
+  btnCancelEdit.onclick = cancelEdit;
+
+  btnSort.onclick = () => {
+    if (editingId){
+      statusPill.textContent = "Finish edit: Save or Cancel.";
+      return;
+    }
+    pushUndo("Sort by time");
+    segments.sort((a,b)=>a.start-b.start);
+    hideInfoPanel(true);
+    statusPill.textContent = "Sorted by time";
+    renderTable();
+  };
+
+  btnDeleteSelected.onclick = () => {
+    if (editingId){
+      statusPill.textContent = "Finish edit: Save or Cancel.";
+      return;
+    }
+    if (selected.size === 0) return;
+    pushUndo(`Delete ${selected.size} selected`);
+    segments = segments.filter(s => !selected.has(s.id));
+    selected.clear();
+    hideInfoPanel(true);
+    statusPill.textContent = "Deleted selected";
+    renderTable();
+  };
+
+  btnPreview.onclick = () => startPreview(findStartTimeByVerse(Number(previewFromVerse.value)));
+  btnPlayPreview.onclick = () => startPreview(findStartTimeByVerse(Number(previewFromVerse.value)));
+  btnStopPreview.onclick = stopPreview;
+
+  btnImportJson.onclick = () => jsonFile.click();
+  jsonFile.addEventListener('change', async (e) => {
+    if (editingId){
+      statusPill.textContent = "Finish edit: Save or Cancel.";
+      e.target.value = "";
+      return;
+    }
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try{
+      const obj = JSON.parse(await file.text());
+      pushUndo(`Import (${file.name})`);
+
+      metaSurah.value = obj.meta?.surah || "";
+      metaReciter.value = obj.meta?.reciter || "";
+      audioUrl.value = obj.meta?.audio_url || "";
+
+      // auto suggest chunks folder
+      if (!(chunksFolder.value || "").trim()){
+        const base = getBaseAudioName(audioUrl.value);
+        chunksFolder.value = `audios/${base}/`;
+      }
+
+      const lay = obj.layout || {};
+      landFont.value = lay.landFont ?? 45;
+      portFont.value = lay.portFont ?? 35;
+
+      segments = Array.isArray(obj.segments) ? obj.segments
+        .filter(s => (s.type || "ayah") !== "bismillah")
+        .map(s => ({
+          id: s.id,
+          type: "ayah",
+          ayah: Number(s.ayah),
+          part: s.part ?? 1,
+          start: Number(s.start),
+          end: Number(s.end),
+
+          // NEW: import audio timestamps/chunk url if present, else default
+          audio_start: (s.audio_start != null ? Number(s.audio_start) : Number(s.start)),
+          audio_end:   (s.audio_end   != null ? Number(s.audio_end)   : Number(s.end)),
+          audio: {
+            url: (s.audio && s.audio.url) ? String(s.audio.url) : chunkUrlForSegment({ayah:Number(s.ayah), part:(s.part ?? 1)})
+          },
+
+          text_ar: s.text_ar ?? "",
+          en_orig: s.en_orig ?? "",
+          en_land: s.en_land ?? s.en_orig ?? "",
+          en_port: s.en_port ?? s.en_orig ?? "",
+          fonts: {
+            land: s.fonts?.land ?? lay.landFont ?? 45,
+            port: s.fonts?.port ?? lay.portFont ?? 35
+          },
+          video: {
+            url: s.video?.url ?? "",
+            brightness: clamp(Number(s.video?.brightness ?? 0.55), 0.2, 1.0)
+          },
+          info: s.info ? { text: s.info.text ?? undefined, media: s.info.media ?? undefined } : undefined
+        })) : [];
+
+      selected.clear();
+      hideInfoPanel(true);
+      statusPill.textContent = `Imported JSON: ${file.name}`;
+      renderTable();
+      updatePreview();
+      enforceFormRules();
+    } catch(err){
+      statusPill.textContent = "Invalid JSON file.";
+    }
+    e.target.value = "";
+    btnUndo.disabled = undoStack.length === 0;
+  });
+
+  btnExportJson.onclick = () => {
+    if (editingId && editDirty){
+      statusPill.textContent = "Save or Cancel your edit before exporting.";
+      return;
+    }
+    const surah = (metaSurah.value || "SURAH").trim();
+    const audio_url = (audioUrl.value || "").trim();
+
+    const out = {
+      meta: {
+        surah,
+        reciter: (metaReciter.value || "").trim() || undefined,
+        audio_url: audio_url || undefined,
+        fps: 30,
+        resolution_land: "1920x1080",
+        resolution_port: "1080x1920"
+      },
+      layout: {
+        landFont: Number(landFont.value || 45),
+        portFont: Number(portFont.value || 35),
+        lineHeight: 1.22
+      },
+      segments: segments.slice().sort((a,b)=>a.start-b.start).map(s => {
+        const aStart = (s.audio_start != null) ? Number(s.audio_start) : Number(s.start);
+        const aEnd   = (s.audio_end   != null) ? Number(s.audio_end)   : Number(s.end);
+
+        const audioChunkUrl = (s.audio && s.audio.url) ? String(s.audio.url) : chunkUrlForSegment(s);
+
+        return ({
+          ...s,
+          type:"ayah",
+
+          // NEW: enforce audio timestamps + chunk url at export
+          audio_start: aStart,
+          audio_end: aEnd,
+          audio: { url: audioChunkUrl },
+
+          video: { url: s.video?.url ?? "", brightness: clamp(Number(s.video?.brightness ?? 0.55), 0.2, 1.0) },
+          fonts: { land: Number(s.fonts?.land ?? 45), port: Number(s.fonts?.port ?? 35) },
+          info: s.info ? { text: s.info.text ?? undefined, media: s.info.media ?? undefined } : undefined
+        });
+      })
+    };
+
+    const blob = new Blob([JSON.stringify(out, null, 2)], {type:"application/json"});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${surah.replace(/\s+/g,'_')}_project.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    statusPill.textContent = "Exported JSON (downloaded)";
+  };
+
+  // NEW BAT export button
+  btnExportBat.onclick = exportBat;
+
+  // Hotkeys
+  document.addEventListener('keydown', (e) => {
+    const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : "";
+    const typing = tag === "input" || tag === "textarea" || tag === "select";
+    if (typing) return;
+
+    if (e.code === "Space"){
+      e.preventDefault();
+      if (audio.paused) audio.play().catch(()=>{}); else audio.pause();
+      return;
+    }
+
+    if (e.key === 's' || e.key === 'S') markStart();
+    if (e.key === 'e' || e.key === 'E') markEnd();
+
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')){
+      e.preventDefault(); doUndo();
+    }
+
+    if (e.key === "Escape"){
+      if (infoOpen) hideInfoPanel(true);
+      else if (editingId) cancelEdit();
+    }
+
+    if (e.key === "i" || e.key === "I"){
+      toggleInfoFromCurrentForm();
+    }
+  });
+
+  // Init
+  function init(){
+    updateTransport();
+    renderTable();
+
+    // defaults ON
+    setArabicUI();
+    setBackgroundUI();
+
+    applyBrightness(bgBrightness.value);
+    recomputeId();
+    updateMoreStatus();
+    setInfoOrbsVisible(false);
+    updatePreview();
+    enforceFormRules();
+    btnUndo.disabled = true;
+    btnLoadAudioUrl.onclick = loadAudioFromUrl;
+
+    // sensible defaults for chunking settings
+    if (!(chunkFormat.value || "").trim()) chunkFormat.value = "m4a";
+    if (!(chunkBitrate.value || "").trim()) chunkBitrate.value = "192k";
+  }
+  init();
+</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "generated_at": "2026-02-02T09:37:11.216Z",
+  "surahs": [
+    {
+      "title": "Surah Fatihah",
+      "file": "/surahs/Al-Fatihah_project.json",
+      "audio": "",
+      "segments": 1
+    },
+    {
+      "title": "Surah Yusuf",
+      "file": "/surahs/Surah_Yusuf_project (8).json",
+      "audio": "audios/C12_R1.mp3",
+      "segments": 4
+    },
+    {
+      "title": "Surah Yusuf",
+      "file": "/surahs/Surah_Yusuf_project.json",
+      "audio": "audios/C12_R1.mp3",
+      "segments": 1
+    }
+  ]
+}

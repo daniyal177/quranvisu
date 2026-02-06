@@ -1,0 +1,121 @@
+{
+  "meta": {
+    "surah": "Surah Yusuf",
+    "reciter": "Mishary Rashid Al Afasy",
+    "audio_url": "audios/C12_R1.mp3",
+    "fps": 30,
+    "resolution_land": "1920x1080",
+    "resolution_port": "1080x1920"
+  },
+  "layout": {
+    "landFont": 45,
+    "portFont": 35,
+    "lineHeight": 1.22
+  },
+  "segments": [
+    {
+      "id": "1:1",
+      "type": "ayah",
+      "ayah": 1,
+      "part": 1,
+      "start": 4.19,
+      "end": 10.057,
+      "audio_start": 4.19,
+      "audio_end": 10.057,
+      "audio": {
+        "url": "audios/C12_R1/C12_R1_1_1.m4a"
+      },
+      "text_ar": "الٓر ۚ",
+      "en_orig": "Alif-Lãm-Ra.",
+      "en_land": "Alif-Lãm-Ra.",
+      "en_port": "Alif-Lãm-Ra.",
+      "fonts": {
+        "land": 45,
+        "port": 35
+      },
+      "video": {
+        "url": "videos/C2_V1_P1.mp4",
+        "brightness": 0.55
+      },
+      "info": {
+        "text": "These are among the fourteen opening letters which occur in various combinations at the beginning of twenty-nine sūrahs in the Qur’ān. Although there has been much speculation as to their meaning, it was not, in fact, revealed by Allāh to anyone and is known only to Him.",
+        "media": "images/C12_V1_P1.png"
+      }
+    },
+    {
+      "id": "1:2",
+      "type": "ayah",
+      "ayah": 1,
+      "part": 2,
+      "start": 9.755,
+      "end": 15.433,
+      "audio_start": 9.755,
+      "audio_end": 15.433,
+      "audio": {
+        "url": "audios/C12_R1/C12_R1_1_2.m4a"
+      },
+      "text_ar": "تِلْكَ ءَايَـٰتُ ٱلْكِتَـٰبِ ٱلْمُبِينِ",
+      "en_orig": "These are the verses of the clear Book.",
+      "en_land": "These are the verses\nof the clear Book.",
+      "en_port": "These are the verses of the clear Book.",
+      "fonts": {
+        "land": 45,
+        "port": 35
+      },
+      "video": {
+        "url": "videos/C2_V1_P1.mp4",
+        "brightness": 0.55
+      }
+    },
+    {
+      "id": "2:1",
+      "type": "ayah",
+      "ayah": 2,
+      "part": 1,
+      "start": 15.433,
+      "end": 24.236,
+      "audio_start": 15.433,
+      "audio_end": 24.236,
+      "audio": {
+        "url": "audios/C12_R1/C12_R1_2_1.m4a"
+      },
+      "text_ar": "إِنَّآ أَنزَلْنَـٰهُ قُرْءَٰنًا عَرَبِيًّۭا",
+      "en_orig": "Indeed, We have sent it down as an Arabic Quran",
+      "en_land": "Indeed,\n We have sent it down\nas an Arabic Quran",
+      "en_port": "Indeed, We have sent it down as an Arabic Quran",
+      "fonts": {
+        "land": 45,
+        "port": 35
+      },
+      "video": {
+        "url": "videos/C2_V1_P1.mp4",
+        "brightness": 0.55
+      }
+    },
+    {
+      "id": "2:2",
+      "type": "ayah",
+      "ayah": 2,
+      "part": 2,
+      "start": 24.236,
+      "end": 28.544,
+      "audio_start": 24.236,
+      "audio_end": 28.544,
+      "audio": {
+        "url": "audios/C12_R1/C12_R1_2_2.m4a"
+      },
+      "text_ar": "لَّعَلَّكُمْ تَعْقِلُونَ",
+      "en_orig": "so that you may understand.",
+      "en_land": "so that you may understand.",
+      "en_port": "so that you may understand.",
+      "fonts": {
+        "land": 45,
+        "port": 35
+      },
+      "video": {
+        "url": "videos/C2_V1_P1.mp4",
+        "brightness": 0.55
+      }
+    }
+  ]
+}

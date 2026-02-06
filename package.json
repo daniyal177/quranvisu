@@ -1,0 +1,8 @@
+{
+  "name": "quran-viz-shorts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/generate-surah-index.js"
+  }
+}
