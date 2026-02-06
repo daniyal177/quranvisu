@@ -39,13 +39,15 @@
 
     *{box-sizing:border-box}
     html,body{height:100%}
+    html{overflow:hidden; overscroll-behavior:none;}
     body{
       margin:0;
       background: radial-gradient(1200px 700px at 65% 0%, #121a2b 0%, var(--bg) 55%);
       color:var(--ink);
       font-family: var(--sans);
-      overflow:hidden;
+      overflow:hidden; /* keep */
       touch-action: none;
+      overscroll-behavior: none;
     }
 
     .app{height:100%; width:100%;}
@@ -79,17 +81,18 @@
     }
 
     /* ---------- micro-interactions ---------- */
-    .btn, .gearBtn, .xBtn, .navCircle, .infoOrb, .card .btn, .infoFull .close, .helpBtn, .wizBtn{
+    .btn, .gearBtn, .xBtn, .navCircle, .infoOrb, .card .btn, .infoFull .close, .helpBtn, .wizBtn,
+    .wizItem, .wizVerseItem, .eyeBtn{
       transform: translateZ(0);
-      transition: transform .14s ease, background .14s ease, border-color .14s ease, box-shadow .14s ease, filter .14s ease, opacity .14s ease;
+      transition: transform .14s ease, background .14s ease, border-color .14s ease, box-shadow .14s ease, filter .14s ease, opacity .18s ease;
       will-change: transform, filter, opacity;
     }
-    .btn:hover, .gearBtn:hover, .xBtn:hover, .infoFull .close:hover, .helpBtn:hover, .wizBtn:hover{
+    .btn:hover, .gearBtn:hover, .xBtn:hover, .infoFull .close:hover, .helpBtn:hover, .wizBtn:hover, .eyeBtn:hover{
       transform: translateY(-1px);
       filter: brightness(1.02);
       box-shadow: 0 14px 55px rgba(0,0,0,.35);
     }
-    .btn:active, .gearBtn:active, .xBtn:active, .infoFull .close:active, .helpBtn:active, .wizBtn:active{
+    .btn:active, .gearBtn:active, .xBtn:active, .infoFull .close:active, .helpBtn:active, .wizBtn:active, .eyeBtn:active{
       transform: translateY(0px) scale(.98);
       box-shadow: 0 10px 35px rgba(0,0,0,.25);
     }
@@ -117,6 +120,18 @@
       .frame{width:100vw;height:100vh;border:none;}
     }
     .viewer.immersive .frame{ width:100vw; height:100vh; border:none; border-radius:0; }
+
+    /* ----- Immersive UI hide (eye button stays) ----- */
+    .chrome{
+      transition: opacity .22s ease, transform .22s ease, filter .22s ease;
+      will-change: opacity, transform, filter;
+    }
+    .frame.uiHidden .chrome{
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+      filter: blur(1px);
+    }
 
     /* Dim system for demo */
     .dimTarget{ transition: filter .15s ease, opacity .15s ease; }
@@ -146,8 +161,7 @@
       transition: opacity .15s ease;
       z-index: 1;
 
-      /* Reduce “press & hold” save prompts as much as possible */
-      pointer-events:none;              /* clicks go to frame */
+      pointer-events:none;
       -webkit-touch-callout:none;
       -webkit-user-select:none;
       user-select:none;
@@ -208,6 +222,27 @@
       backdrop-filter: blur(10px);
       font-weight:900;
     }
+
+    /* Eye button (bottom-left) */
+    .eyeBtn{
+      position:absolute;
+      left: calc(14px * var(--ui));
+      bottom: calc(14px * var(--ui));
+      width: calc(44px * var(--ui));
+      height: calc(44px * var(--ui));
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.18);
+      background: var(--glass2);
+      color: rgba(255,255,255,.92);
+      cursor:pointer;
+      user-select:none;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 14px 50px rgba(0,0,0,.35);
+      display:grid;
+      place-items:center;
+      z-index: 30; /* above chrome */
+    }
+    .eyeBtn svg{ width: calc(18px * var(--ui)); height: calc(18px * var(--ui)); opacity:.95; }
 
     /* ---------- Text Layers ---------- */
     .textArea{
@@ -538,6 +573,7 @@
       pointer-events:auto;
       background: rgba(0,0,0,.62);
       backdrop-filter: blur(10px);
+      overflow:hidden; /* prevents any horizontal flash */
     }
     .wizard .sheet{
       position:absolute;
@@ -551,6 +587,7 @@
       box-shadow: var(--shadow);
       overflow:hidden;
       padding: calc(14px * var(--ui));
+      contain: layout paint; /* helps stop scrollbar flash on first interaction */
     }
 
     .wizSearchRow{
@@ -563,6 +600,7 @@
       border-radius: calc(12px * var(--ui));
       padding: calc(10px * var(--ui)) calc(12px * var(--ui));
       margin-bottom: calc(12px * var(--ui));
+      overflow:hidden; /* no horizontal overflow when pop anim hits */
     }
     .wizSearchRow input{
       width:100%;
@@ -572,19 +610,25 @@
       color: rgba(255,255,255,.92);
       font-size: calc(14px * var(--ui));
       font-weight: 700;
+      min-width:0;
     }
     .wizSearchRow .icon{
       opacity:.85;
       font-size: calc(16px * var(--ui));
       user-select:none;
+      flex:0 0 auto;
     }
 
     .wizList{
       max-height: min(38vh, 360px);
       overflow:auto;
+      overflow-x:hidden; /* FIX: prevent horizontal scrollbar flash */
       -webkit-overflow-scrolling: touch;
       padding-right: 6px;
       margin-bottom: calc(12px * var(--ui));
+      scrollbar-gutter: stable; /* reduces first-time layout shift */
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
     }
     .wizItem{
       width:100%;
@@ -599,6 +643,8 @@
       text-align:center;
       color: rgba(255,255,255,.92);
       user-select:none;
+      overflow:hidden; /* FIX: avoid overflow during pop scale */
+      transform-origin: center;
     }
     .wizItem.active{
       border-color: rgba(110,231,255,.55);
@@ -659,6 +705,8 @@
       text-align:center;
       color: rgba(255,255,255,.92);
       user-select:none;
+      overflow:hidden;
+      transform-origin:center;
     }
     .wizVerseItem.active{
       border-color: rgba(110,231,255,.55);
@@ -855,6 +903,7 @@
     @media (prefers-reduced-motion: reduce){
       .demoHand{animation:none}
       .hl,.hlGold{animation:none}
+      .frame.uiHidden .chrome{transition:none}
     }
   </style>
 </head>
@@ -865,7 +914,7 @@
     <div class="stage">
       <div class="frame" id="frame">
 
-        <div class="progress dimTarget" id="progressWrap"><div class="bar" id="pbar"></div></div>
+        <div class="progress dimTarget chrome" id="progressWrap"><div class="bar" id="pbar"></div></div>
 
         <div class="fallbackBg dimTarget" id="fallbackBg"></div>
 
@@ -878,7 +927,7 @@
 
         <div class="vignette dimTarget" id="vignette"></div>
 
-        <div class="overlayTop dimTarget" id="overlayTop">
+        <div class="overlayTop dimTarget chrome" id="overlayTop">
           <div class="leftTop"></div>
           <div class="rightTop">
             <button class="gearBtn" id="btnGear" type="button" title="Settings">⚙️</button>
@@ -886,11 +935,11 @@
           </div>
         </div>
 
-        <div class="pausePill dimTarget" id="pausePill">Paused</div>
+        <div class="pausePill dimTarget chrome" id="pausePill">Paused</div>
 
         <div class="textArea dimTarget" id="textArea"></div>
 
-        <div class="badge dimTarget" id="badge">
+        <div class="badge dimTarget chrome" id="badge">
           <div class="badgeRow">
             <div></div>
 
@@ -909,6 +958,14 @@
             </div>
           </div>
         </div>
+
+        <!-- Eye / immersive UI toggle (stays visible) -->
+        <button class="eyeBtn" id="btnEye" type="button" title="Immersive mode">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M2.2 12s3.5-7 9.8-7 9.8 7 9.8 7-3.5 7-9.8 7S2.2 12 2.2 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
 
         <div class="endOverlay" id="endOverlay" aria-hidden="true">
           <div class="endCard">
@@ -990,7 +1047,6 @@
             <!-- Step 1: Surah -->
             <div class="wizStep" id="wizStep1">
               <div class="wizSearchRow" id="surahSearchRow">
-                <!-- readonly by default: keyboard only opens when row is clicked -->
                 <input id="wizSurahSearch" placeholder="Type surah name..." autocomplete="off" readonly inputmode="search"/>
                 <div class="icon">🔍</div>
               </div>
@@ -1003,7 +1059,6 @@
             <!-- Step 2: Verse -->
             <div class="wizStep" id="wizStep2">
               <div class="wizSearchRow" id="verseSearchRow">
-                <!-- readonly by default: keyboard only opens when row is clicked -->
                 <input id="wizVerseSearch" placeholder="Type verse..." autocomplete="off" readonly inputmode="numeric"/>
                 <div class="icon">🔍</div>
               </div>
@@ -1077,6 +1132,10 @@
   const bg = el('bg');
   const audio = el('audio');
   const pbar = el('pbar');
+
+  // Eye
+  const btnEye = el('btnEye');
+  let uiHidden = false;
 
   // Text
   const textArea = el('textArea');
@@ -1186,9 +1245,6 @@
   document.addEventListener("contextmenu", killContext, {capture:true});
   frame.addEventListener("contextmenu", killContext, {capture:true});
   bg.addEventListener("contextmenu", killContext, {capture:true});
-
-  // Some browsers show image/video “save” on long press via touch callout
-  // This reduces it; cannot 100% stop OS-level actions in every browser.
   ["copy","cut","paste","selectstart","dragstart"].forEach(ev=>{
     document.addEventListener(ev, killContext, {capture:true});
   });
@@ -1329,7 +1385,6 @@
       if (ar) ar.classList.toggle("hidden", !showArabic);
     }
 
-    // Don’t auto-play bg when paused
     if (userInteracted && showBackground && !paused){
       bg.play().catch(()=>{});
     }
@@ -1359,7 +1414,6 @@
       bg.src = u;
       bg.load();
     }
-    // Only play if not paused
     if (userInteracted && !paused && showBackground){
       bg.play().catch(()=>{});
     }
@@ -1572,8 +1626,6 @@
         setPaused(false);
       });
       navigator.mediaSession.setActionHandler("pause", ()=>{ setPaused(true); });
-
-      // IMPORTANT: allow track skip even while paused? keep consistent with swipe requirement:
       navigator.mediaSession.setActionHandler("previoustrack", ()=>{ ensureUserGesture(); prev(true); });
       navigator.mediaSession.setActionHandler("nexttrack", ()=>{ ensureUserGesture(); next(true); });
     }catch(_){}
@@ -1682,9 +1734,15 @@
       applySegment(idx, true);
       updateMediaSession();
 
+      // FIX: first-time demo run must behave exactly like the "?" demo.
       if (!sessionStorage.getItem("qvz_demo_seen")){
         sessionStorage.setItem("qvz_demo_seen","1");
-        setTimeout(()=> startDemo(true), 380);
+        // wait for UI paint + layout before starting demo (prevents first-run highlight issues)
+        requestAnimationFrame(()=>{
+          requestAnimationFrame(()=>{
+            setTimeout(()=> startDemo(true), 0);
+          });
+        });
       }
 
     }catch(e){
@@ -1711,7 +1769,6 @@
     pbar.style.width = "0%";
     setToggleUI();
 
-    // If paused, keep everything paused but still let user navigate verses
     if (paused){
       try{ audio.pause(); }catch(_){}
       try{ bg.pause(); }catch(_){}
@@ -1876,7 +1933,6 @@
     applySegment(0, true);
   }
 
-  // allowWhilePaused: true lets swipe change verse even if paused
   function next(allowWhilePaused){
     if (!current) return;
     if (infoOpen || ended) return;
@@ -1886,8 +1942,6 @@
       if (autoplay && !paused) { reachEndOfSurah(); }
       return;
     }
-
-    // keep paused state; applySegment already respects it
     applySegment(n, true);
   }
 
@@ -1915,7 +1969,6 @@
     if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 45){
       ensureUserGesture();
       suppressFrameTap();
-      // IMPORTANT: allow swipe even while paused
       if (dy < 0) next(true);
       else prev(true);
       return true;
@@ -2192,7 +2245,10 @@
       const row = document.createElement("div");
       row.className = "wizItem" + (s.file === wizSelectedFile ? " active" : "");
       row.textContent = s.title ? s.title : s.file;
+
       row.addEventListener("click", async ()=>{
+        // FIX: prevent first-click horizontal scrollbar flash inside list
+        // (pop animation can temporarily overflow; list is overflow-x hidden now)
         popFx(row);
         wizSelectedFile = s.file;
         try{
@@ -2266,10 +2322,8 @@
       try{ inputEl.blur(); }catch(_){}
     };
 
-    // keep readonly by default
     inputEl.readOnly = true;
 
-    // only open keyboard when row is clicked/tapped
     rowEl.addEventListener("pointerdown", (e)=>{
       e.preventDefault();
       e.stopPropagation();
@@ -2278,7 +2332,6 @@
       enableAndFocus();
     }, {passive:false});
 
-    // also allow direct tap on input itself
     inputEl.addEventListener("pointerdown", (e)=>{
       e.preventDefault();
       e.stopPropagation();
@@ -2286,7 +2339,6 @@
       enableAndFocus();
     }, {passive:false});
 
-    // once user leaves, lock again so keyboard won't pop next time automatically
     inputEl.addEventListener("blur", ()=>{ disable(); }, {passive:true});
   }
   armInputForTap(wizSurahSearch, surahSearchRow);
@@ -2296,13 +2348,11 @@
     suppressFrameTap();
     ensureUserGesture();
 
-    // lock search inputs (prevents auto keyboard on open)
     wizSurahSearch.readOnly = true;
     wizVerseSearch.readOnly = true;
     wizSurahSearch.value = "";
     wizVerseSearch.value = "";
 
-    // pause media (optional)
     if (current && !ended) setPaused(true);
 
     wizard.style.display = "block";
@@ -2311,22 +2361,7 @@
 
     setWizardStep(1);
 
-    if (forceFresh || !surahs.length){
-      loadSurahs().then(()=>{
-        if (current?.file){
-          wizSelectedFile = current.file;
-          wizParsed = current;
-          computeWizVerseMeta(wizParsed);
-          wizSelectedVerse = Number(current.segments?.[idx]?.ayah ?? 1) || 1;
-        } else {
-          wizSelectedFile = "";
-          wizParsed = null;
-          wizSelectedVerse = 1;
-        }
-        renderWizardSurahList();
-        wizNext.disabled = !wizSelectedFile;
-      });
-    } else {
+    const afterLoad = ()=>{
       if (current?.file){
         wizSelectedFile = current.file;
         wizParsed = current;
@@ -2339,6 +2374,12 @@
       }
       renderWizardSurahList();
       wizNext.disabled = !wizSelectedFile;
+    };
+
+    if (forceFresh || !surahs.length){
+      loadSurahs().then(afterLoad);
+    } else {
+      afterLoad();
     }
   }
 
@@ -2353,7 +2394,6 @@
   wizSurahSearch.addEventListener("input", ()=>{ renderWizardSurahList(); });
   wizVerseSearch.addEventListener("input", ()=> renderWizardVerseList());
 
-  // enable next when selected
   const observeSelection = new MutationObserver(()=>{ wizNext.disabled = !wizSelectedFile; });
   observeSelection.observe(wizSurahList, { childList:true, subtree:true });
 
@@ -2394,7 +2434,6 @@
 
   wizard.addEventListener("click", (e)=>{ if (e.target === wizard) closeWizard(); });
 
-  // Verse circle opens wizard
   navCircle.addEventListener("pointerdown", (e)=>{ suppressFrameTap(); e.preventDefault(); e.stopPropagation(); }, {passive:false});
   navCircle.addEventListener("click", (e)=>{
     e.preventDefault();
@@ -2439,7 +2478,9 @@
 
     demo.style.display = "block";
     demo.setAttribute("aria-hidden","false");
-    renderDemoStep();
+
+    // ensure the demo render happens after layout (fixes first-run highlight visibility)
+    requestAnimationFrame(()=>renderDemoStep());
   }
 
   function resumeAfterDemo(){
@@ -2530,10 +2571,24 @@
     startDemo(true);
   });
 
-  // Button pointerdown suppression
   btnGear.addEventListener("pointerdown", (e)=>{ suppressFrameTap(); e.preventDefault(); e.stopPropagation(); }, {passive:false});
   btnHelp.addEventListener("pointerdown", (e)=>{ suppressFrameTap(); e.preventDefault(); e.stopPropagation(); }, {passive:false});
   infoOrb.addEventListener("pointerdown", (e)=>{ suppressFrameTap(); e.preventDefault(); e.stopPropagation(); }, {passive:false});
+
+  // ---------- Eye / Immersive UI ----------
+  function setUIHidden(on){
+    uiHidden = !!on;
+    frame.classList.toggle("uiHidden", uiHidden);
+    // Don’t let hidden UI eat taps
+    suppressFrameTap();
+  }
+  btnEye.addEventListener("pointerdown", (e)=>{ suppressFrameTap(); e.preventDefault(); e.stopPropagation(); }, {passive:false});
+  btnEye.addEventListener("click", (e)=>{
+    suppressFrameTap();
+    e.preventDefault(); e.stopPropagation();
+    popFx(btnEye);
+    setUIHidden(!uiHidden);
+  });
 
   // Optional: open wizard on first load
   function boot(){
