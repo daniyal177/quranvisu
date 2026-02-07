@@ -35,6 +35,9 @@
 
       --good: rgba(110,231,255,.92);
       --warn: rgba(255,95,95,.95);
+
+      /* NEW: text padding bottom is driven by UI mode */
+      --textPadBottom: calc(122px * var(--ui)); /* normal (nav visible) */
     }
 
     *{box-sizing:border-box}
@@ -111,7 +114,7 @@
       -webkit-user-select:none;
       user-select:none;
       -webkit-touch-callout:none;
-      isolation:isolate; /* helps ensure demo layers never "composite-blur" buttons */
+      isolation:isolate;
     }
     @media (min-width: 900px) and (orientation: landscape){
       .stage{place-items:stretch;}
@@ -121,12 +124,8 @@
 
     /* Dim system for demo (NO FILTER -> prevents first-run blur) */
     .dimTarget{ transition: opacity .15s ease; }
-    .frame.demoActive .dimTarget{
-      opacity: .18;
-    }
-    .frame.demoActive .dimTarget.noDim{
-      opacity: 1 !important;
-    }
+    .frame.demoActive .dimTarget{ opacity: .18; }
+    .frame.demoActive .dimTarget.noDim{ opacity: 1 !important; }
 
     .fallbackBg{
       position:absolute; inset:0;
@@ -220,7 +219,7 @@
     .textArea{
       position:absolute; inset:0;
       display:flex;align-items:center;justify-content:center;
-      padding: calc(28px * var(--ui)) calc(22px * var(--ui)) calc(122px * var(--ui));
+      padding: calc(28px * var(--ui)) calc(22px * var(--ui)) var(--textPadBottom);
       text-align:center;
       pointer-events:none;
       z-index: 6;
@@ -742,7 +741,6 @@
       z-index: 999;
       pointer-events:auto;
     }
-    /* Make sure demo backdrop never sits "on top" of highlights */
     .demo::before{
       content:"";
       position:absolute; inset:0;
@@ -915,19 +913,14 @@
 
           <div class="rightTop">
             <button class="gearBtn hideableUI" id="btnGear" type="button" title="Settings">⚙️</button>
-
-            <!-- ? stays in the middle -->
             <button class="helpBtn hideableUI" id="btnHelp" type="button" title="Help">?</button>
 
-            <!-- Eye moved to where ? used to be (right-most position) -->
             <button class="eyeBtn" id="btnEye" type="button" title="Immersive UI">
-              <!-- open eye -->
               <svg class="eyeSvg eyeOpen" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" stroke="rgba(255,255,255,.92)" stroke-width="1.8" />
                 <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" stroke="rgba(255,255,255,.92)" stroke-width="1.8" />
                 <path d="M12 11.3c.95 0 1.7.75 1.7 1.7" stroke="rgba(255,255,255,.92)" stroke-width="1.8" stroke-linecap="round" opacity=".65"/>
               </svg>
-              <!-- closed eye -->
               <svg class="eyeSvg eyeClosed" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M3 12s3.5-7 9-7 9 7 9 7" stroke="rgba(255,255,255,.60)" stroke-width="1.8" opacity=".0"/>
                 <path d="M4 12c2.5 2.8 5.2 4.2 8 4.2 2.8 0 5.5-1.4 8-4.2" stroke="rgba(255,255,255,.92)" stroke-width="1.8" stroke-linecap="round"/>
@@ -1265,13 +1258,21 @@
     setTimeout(()=>navCircle.classList.remove("glow"), 260);
   }
 
+  function updateTextPaddingForUIMode(){
+    // NEW: when UI is hidden, give more room (less bottom padding)
+    const ui = Number(getComputedStyle(document.documentElement).getPropertyValue("--ui")) || 1;
+    const bottom = uiHidden ? (44 * ui) : (122 * ui);
+    document.documentElement.style.setProperty("--textPadBottom", bottom.toFixed(2) + "px");
+  }
+
   function updateUIScale(){
     const w = frame.clientWidth || window.innerWidth;
     const h = frame.clientHeight || window.innerHeight;
     const minDim = Math.min(w,h);
     const ui = clamp(minDim / 980, 0.92, 1.10);
     document.documentElement.style.setProperty("--ui", ui.toFixed(3));
-    if (current?.segments?.[idx]) refreshCurrentTextAndFit();
+    updateTextPaddingForUIMode();
+    if (current?.segments?.[idx]) rebuildCurrentLayer(false);
   }
   window.addEventListener("resize", updateUIScale);
   window.addEventListener("orientationchange", updateUIScale);
@@ -1350,6 +1351,10 @@
         n.removeAttribute("aria-hidden");
       }
     });
+
+    // NEW: adjust padding + REGENERATE current text sizing/layout for the new space
+    updateTextPaddingForUIMode();
+    rebuildCurrentLayer(true); // force rebuild so text gets bigger/smaller immediately
   }
 
   btnEye.addEventListener("pointerdown", (e)=>{
@@ -1425,10 +1430,13 @@
   }
 
   function computeTextScale(){
+    // NEW: make text scale react to UI mode (more space => bigger)
     const w = frame.clientWidth || window.innerWidth;
     const h = frame.clientHeight || window.innerHeight;
     const minDim = Math.min(w,h);
-    return clamp(minDim / 980, 0.95, 1.10);
+    const base = clamp(minDim / 980, 0.95, 1.10);
+    const boost = uiHidden ? 1.14 : 1.00; // tweak if you want bigger/smaller
+    return clamp(base * boost, 0.95, 1.25);
   }
 
   function setVideo(url, brightness){
@@ -1558,9 +1566,19 @@
     requestAnimationFrame(()=>{
       const ui = Number(getComputedStyle(document.documentElement).getPropertyValue("--ui")) || 1;
       const margin = 14 * ui;
-      const navRect = navCircle.getBoundingClientRect();
+
+      // NEW: if UI is hidden, don't reserve space for the (hidden) verse nav.
+      // Use frame bottom as the limit so text can grow.
+      let maxBottom;
+      if (uiHidden){
+        const fr = frame.getBoundingClientRect();
+        maxBottom = fr.bottom - margin;
+      } else {
+        const navRect = navCircle.getBoundingClientRect();
+        maxBottom = navRect.top - margin;
+      }
+
       const layerRect = layer.getBoundingClientRect();
-      const maxBottom = navRect.top - margin;
       if (layerRect.bottom <= maxBottom) return;
 
       const en = layer.querySelector(".english");
@@ -1571,7 +1589,7 @@
       let enSize = getPx(en);
       let arSize = ar ? getPx(ar) : 0;
 
-      for (let k=0; k<10; k++){
+      for (let k=0; k<12; k++){
         enSize = Math.max(16, enSize * 0.92);
         if (ar) arSize = Math.max(16, arSize * 0.92);
 
@@ -1584,9 +1602,9 @@
     });
   }
 
-  function makeLayer(seg){
+  function makeLayer(seg, {animate=true} = {}){
     const layer = document.createElement("div");
-    layer.className = "layer in";
+    layer.className = animate ? "layer in" : "layer";
 
     const ar = document.createElement("div");
     ar.className = "arabic" + (showArabic ? "" : " hidden");
@@ -1599,8 +1617,8 @@
     const scale = computeTextScale();
     const basePort = Number(seg.fonts?.port ?? current?.json?.layout?.portFont ?? 35);
 
-    en.style.fontSize = clamp(basePort * scale, 18, 78) + "px";
-    ar.style.fontSize = clamp(Math.round(basePort * 0.72 * scale), 18, 62) + "px";
+    en.style.fontSize = clamp(basePort * scale, 18, 92) + "px";
+    ar.style.fontSize = clamp(Math.round(basePort * 0.72 * scale), 18, 72) + "px";
 
     layer.appendChild(ar);
     layer.appendChild(en);
@@ -1610,7 +1628,7 @@
   }
 
   function animateToSegment(seg){
-    const nextLayer = makeLayer(seg);
+    const nextLayer = makeLayer(seg, {animate:true});
     textArea.appendChild(nextLayer);
 
     if (currentLayer){
@@ -1625,6 +1643,22 @@
     }
   }
 
+  // NEW: hard rebuild the current layer (used when toggling eye / resizing)
+  function rebuildCurrentLayer(force){
+    const seg = current?.segments?.[idx];
+    if (!seg) return;
+    if (!currentLayer && !force) return;
+
+    // Keep it snappy: no animation on rebuild
+    textArea.innerHTML = "";
+    currentLayer = makeLayer(seg, {animate:false});
+    textArea.appendChild(currentLayer);
+
+    // Keep Arabic visibility in sync
+    const ar = currentLayer.querySelector(".arabic");
+    if (ar) ar.classList.toggle("hidden", !showArabic);
+  }
+
   function refreshCurrentTextAndFit(){
     const seg = current?.segments?.[idx];
     if (!seg || !currentLayer) return;
@@ -1635,8 +1669,8 @@
 
     const scale = computeTextScale();
     const basePort = Number(seg.fonts?.port ?? current?.json?.layout?.portFont ?? 35);
-    if (en) en.style.fontSize = clamp(basePort * scale, 18, 78) + "px";
-    if (ar) ar.style.fontSize = clamp(Math.round(basePort * 0.72 * scale), 18, 62) + "px";
+    if (en) en.style.fontSize = clamp(basePort * scale, 18, 92) + "px";
+    if (ar) ar.style.fontSize = clamp(Math.round(basePort * 0.72 * scale), 18, 72) + "px";
 
     fitLayerToAvoidOverlap(currentLayer);
   }
@@ -1787,7 +1821,10 @@
     circleNum.textContent = String(seg.ayah ?? "—");
 
     setVideo(seg.video?.url, seg.video?.brightness);
+
+    // Use normal animated transition when changing verses
     animateToSegment(seg);
+
     setInfoOrbVisible(segmentHasInfo(seg));
 
     pbar.style.width = "0%";
@@ -2213,7 +2250,7 @@
   function flipArabic(){
     showArabic = !showArabic;
     setToggleUI();
-    refreshCurrentTextAndFit();
+    rebuildCurrentLayer(false);
     if (!paused && audio.getAttribute("src")) audio.play().catch(()=>{});
   }
   function flipBg(){
@@ -2494,7 +2531,6 @@
     frame.classList.add("demoActive");
     clearNoDim();
 
-    // temporarily show UI so the demo is always visible
     const prevHidden = uiHidden;
     if (prevHidden) setUIHidden(false);
 
@@ -2510,9 +2546,7 @@
     demo.setAttribute("aria-hidden","false");
     demo.dataset._restoreUiHidden = prevHidden ? "1" : "0";
 
-    // make sure top bar isn't dimmed during button explanation steps
     ensureVisibleDuringDemo(overlayTop);
-
     renderDemoStep();
   }
 
@@ -2544,8 +2578,6 @@
   function renderDemoStep(){
     clearHighlights();
 
-    // Order requested:
-    // 1) Settings, 2) ?, 3) Eye, then the rest
     const steps = [
       { text: "⚙️ Settings: toggle Arabic, background, autoplay, and fullscreen.", mini:false, highlight:"gear" },
       { text: "?: re-open this quick demo anytime.", mini:false, highlight:"help" },
@@ -2625,11 +2657,7 @@
   btnGear.addEventListener("pointerdown", (e)=>{ suppressFrameTap(); e.preventDefault(); e.stopPropagation(); }, {passive:false});
   btnEye.addEventListener("pointerdown", (e)=>{ suppressFrameTap(); e.preventDefault(); e.stopPropagation(); }, {passive:false});
   infoOrb.addEventListener("pointerdown", (e)=>{ suppressFrameTap(); e.preventDefault(); e.stopPropagation(); }, {passive:false});
-
-  // Info close + overlay
   infoClose.addEventListener("pointerdown", (e)=>{ suppressFrameTap(); e.preventDefault(); e.stopPropagation(); }, {passive:false});
-
-  // Eye button already has handlers above
 
   // Optional: open wizard on first load
   function boot(){
